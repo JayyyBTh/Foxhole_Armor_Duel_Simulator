@@ -17,7 +17,11 @@ Naming convention (throughout):
 """
 
 from __future__ import annotations
+import argparse
+import json
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
@@ -355,171 +359,81 @@ def print_shot_log(tank1: Tank, tank2: Tank, result: dict, n: int = 15) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Quick usage example
+# Tank library loader
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
-    bardiche_gun = Weapon(
-        name="Bardiche 68mm",
-        damage_health=600,
-        damage_armor=600,
-        pen_mod=1.5,
-        reload_time=4.5,
-        fire_cooldown=0.8,
-        ammo_capacity=2,
-    )
-    bardiche = Tank(
-        name="Bardiche",
-        base_health=4000,
-        base_armor=15650,
-        base_pen_chance=0.23,
-        pre_bonus_cap=0.67,
-        weapon=bardiche_gun,
-    )
+DEFAULT_TANKS_FILE = Path(__file__).with_name("tanks.json")
 
-    htd_gun = Weapon(
-        name="HTD gun",
-        damage_health=1050,
-        damage_armor=1050,
-        pen_mod=1.5,
-        reload_time=4.5,
-        fire_cooldown=2.0,
-        ammo_capacity=1,
-    )
-    htd = Tank(
-        name="HTD",
-        base_health=2200,
-        base_armor=17650,
-        base_pen_chance=0.17,
-        pre_bonus_cap=0.50,
-        weapon=htd_gun,
-    )
-    update_bard_gun = Weapon(
-        name="Update Bard 68mm",
-        damage_health=600,
-        damage_armor=600,
-        pen_mod=1.5,
-        reload_time=4.5,
-        fire_cooldown=0.8,
-        ammo_capacity=3,
-    )
-    update_bard = Tank(
-        name="Update Bard",
-        base_health=4000,
-        base_armor=15650,
-        base_pen_chance=0.23,
-        pre_bonus_cap=0.67,
-        weapon=update_bard_gun,
-    )
 
-    update_htd_gun = Weapon(
-        name="Update HTD gun",
-        damage_health=1050,
-        damage_armor=1050,
-        pen_mod=1.5,
-        reload_time=4.5,
-        fire_cooldown=2.0,
-        ammo_capacity=1,
-    )
-    update_htd = Tank(
-        name="Update HTD",
-        base_health=2200,
-        base_armor=17650,
-        base_pen_chance=0.22,
-        pre_bonus_cap=0.50,
-        weapon=update_htd_gun,
-    )
+def load_tanks(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, Tank]:
+    """Load tank definitions from a JSON file. Keys are lookup IDs."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    tanks: Dict[str, Tank] = {}
+    for key, entry in data.items():
+        w = entry["weapon"]
+        tanks[key] = Tank(
+            name=entry["name"],
+            base_health=entry["base_health"],
+            base_armor=entry["base_armor"],
+            base_pen_chance=entry["base_pen_chance"],
+            pre_bonus_cap=entry["pre_bonus_cap"],
+            weapon=Weapon(
+                name=w["name"],
+                damage_health=w["damage_health"],
+                damage_armor=w["damage_armor"],
+                pen_mod=w["pen_mod"],
+                reload_time=w["reload_time"],
+                fire_cooldown=w["fire_cooldown"],
+                ammo_capacity=w.get("ammo_capacity", 1),
+            ),
+        )
+    return tanks
 
-    spatha_gun = Weapon(
-        name="spatha 40mm",
-        damage_health=561,
-        damage_armor=561,
-        pen_mod=1.0,
-        reload_time=3,
-        fire_cooldown=1.5,
-        ammo_capacity=1,
-    )
-    spatha = Tank(
-        name="spatha",
-        base_health=3650,
-        base_armor=13550,
-        base_pen_chance=0.33,
-        pre_bonus_cap=0.67,
-        weapon=spatha_gun,
-    )
 
-    outlaw_gun = Weapon(
-        name="outlaw gun",
-        damage_health=612,
-        damage_armor=612,
-        pen_mod=1.0,
-        reload_time=5,
-        fire_cooldown=2.0,
-        ammo_capacity=1,
-    )
-    outlaw = Tank(
-        name="outlaw",
-        base_health=2950,
-        base_armor=11000,
-        base_pen_chance=0.33,
-        pre_bonus_cap=0.67,
-        weapon=outlaw_gun,
-    )
-    update_spatha_gun = Weapon(
-        name="Update spatha 40mm",
-        damage_health=510,
-        damage_armor=510,
-        pen_mod=1.0,
-        reload_time=4,
-        fire_cooldown=1.5,
-        ammo_capacity=1,
-    )
-    update_spatha = Tank(
-        name="Update spatha",
-        base_health=3650,
-        base_armor=10500,
-        base_pen_chance=0.33,
-        pre_bonus_cap=0.70,
-        weapon=update_spatha_gun,
-    )
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 
-    brigand_gun = Weapon(
-        name="brigand 30mm",
-        damage_health=340,
-        damage_armor=340,
-        pen_mod=1.0,
-        reload_time=2.5,
-        fire_cooldown=1.5,
-        ammo_capacity=3,
+def main(argv: Optional[List[str]] = None) -> int:
+    library = load_tanks()
+    tank_keys = sorted(library.keys())
+
+    parser = argparse.ArgumentParser(
+        description="Simulate a 1v1 Foxhole tank duel.",
+        epilog=f"Available tanks: {', '.join(tank_keys)}",
     )
-    
-    brigand = Tank(
-        name="brigand",
-        base_health=2950,
-        base_armor=11000,
-        base_pen_chance=0.33,
-        pre_bonus_cap=0.67,
-        weapon=brigand_gun,
-    )
+    parser.add_argument("tank1", help="lookup key of tank 1 (see list below)")
+    parser.add_argument("armor1", type=float, help="tank 1 initial armor fraction (0.0-1.0)")
+    parser.add_argument("tank2", help="lookup key of tank 2")
+    parser.add_argument("armor2", type=float, help="tank 2 initial armor fraction (0.0-1.0)")
+    parser.add_argument("range_m", type=float, help="engagement range in metres")
+    parser.add_argument("--shots", type=int, default=15, help="shot-log length (default 15)")
+    parser.add_argument("--tanks-file", type=Path, default=DEFAULT_TANKS_FILE,
+                        help=f"path to tanks JSON (default {DEFAULT_TANKS_FILE.name})")
+    args = parser.parse_args(argv)
+
+    if args.tanks_file != DEFAULT_TANKS_FILE:
+        library = load_tanks(args.tanks_file)
+
+    for key in (args.tank1, args.tank2):
+        if key not in library:
+            parser.error(f"unknown tank '{key}'. Available: {', '.join(sorted(library))}")
+
+    t1 = library[args.tank1]
+    t2 = library[args.tank2]
 
     result = simulate_duel(
-        tank1=spatha,
-        tank2=brigand,
-        initial_armor_frac1=0.7,
-        initial_armor_frac2=0.7,
-        range_m=30.0,
+        tank1=t1,
+        tank2=t2,
+        initial_armor_frac1=args.armor1,
+        initial_armor_frac2=args.armor2,
+        range_m=args.range_m,
     )
+    print_duel_summary(t1, t2, result)
+    print_shot_log(t1, t2, result, n=args.shots)
+    return 0
 
-    print_duel_summary(spatha, brigand, result)
-    print_shot_log(spatha, brigand, result, n=5)
 
-    result2 = simulate_duel(
-        tank1=update_spatha,
-        tank2=brigand,
-        initial_armor_frac1=0.7,
-        initial_armor_frac2=0.7,
-        range_m=30.0,
-    )
-
-    print_duel_summary(update_spatha, brigand, result2)
-    print_shot_log(update_spatha, brigand, result2, n=5)
+if __name__ == "__main__":
+    sys.exit(main())
