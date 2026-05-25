@@ -12,7 +12,8 @@
       "pen_mod": 1.5,
       "reload_time": 4.5,
       "fire_cooldown": 0.8,
-      "ammo_capacity": 2
+      "ammo_capacity": 2,
+      "disable_chance": 0.15
     }
   },
   "update_bard": {
@@ -28,7 +29,8 @@
       "pen_mod": 1.5,
       "reload_time": 4.5,
       "fire_cooldown": 0.8,
-      "ammo_capacity": 3
+      "ammo_capacity": 3,
+      "disable_chance": 0.15
     }
   },
   "htd": {
@@ -44,7 +46,8 @@
       "pen_mod": 1.5,
       "reload_time": 4.5,
       "fire_cooldown": 2.0,
-      "ammo_capacity": 1
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
     }
   },
   "update_htd": {
@@ -60,7 +63,8 @@
       "pen_mod": 1.5,
       "reload_time": 4.5,
       "fire_cooldown": 2.0,
-      "ammo_capacity": 1
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
     }
   },
   "spatha": {
@@ -76,7 +80,8 @@
       "pen_mod": 1.0,
       "reload_time": 3,
       "fire_cooldown": 1.5,
-      "ammo_capacity": 1
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
     }
   },
   "update_spatha": {
@@ -92,7 +97,8 @@
       "pen_mod": 1.0,
       "reload_time": 4,
       "fire_cooldown": 1.5,
-      "ammo_capacity": 1
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
     }
   },
   "outlaw": {
@@ -108,7 +114,8 @@
       "pen_mod": 1.0,
       "reload_time": 5,
       "fire_cooldown": 2.0,
-      "ammo_capacity": 1
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
     }
   },
   "brigand": {
@@ -124,7 +131,8 @@
       "pen_mod": 1.0,
       "reload_time": 2.5,
       "fire_cooldown": 1.5,
-      "ammo_capacity": 3
+      "ammo_capacity": 3,
+      "disable_chance": 0.2
     }
   },
   "silverhand": {
@@ -141,7 +149,8 @@
         "pen_mod": 1.0,
         "reload_time": 5.5,
         "fire_cooldown": 2.0,
-        "ammo_capacity": 1
+        "ammo_capacity": 1,
+        "disable_chance": 0.2
       },
       {
         "name": "Casemate 68mm",
@@ -150,7 +159,8 @@
         "pen_mod": 1.5,
         "reload_time": 5.5,
         "fire_cooldown": 2.0,
-        "ammo_capacity": 1
+        "ammo_capacity": 1,
+        "disable_chance": 0.15
       }
     ]
   },
@@ -168,7 +178,8 @@
         "pen_mod": 1.0,
         "reload_time": 5.5,
         "fire_cooldown": 2.0,
-        "ammo_capacity": 1
+        "ammo_capacity": 1,
+        "disable_chance": 0.2
       },
       {
         "name": "Casemate 68mm",
@@ -177,7 +188,8 @@
         "pen_mod": 1.5,
         "reload_time": 4.5,
         "fire_cooldown": 2.0,
-        "ammo_capacity": 1
+        "ammo_capacity": 1,
+        "disable_chance": 0.15
       }
     ]
   }

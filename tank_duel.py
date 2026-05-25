@@ -37,13 +37,15 @@ from typing import Dict, List, Optional, Tuple
 @dataclass
 class Weapon:
     """
-    name          : label
-    damage_health : HP removed from target per penetrating hit
-    damage_armor  : armor-points removed per penetrating hit
-    pen_mod       : penetration modifier (1.0 = baseline)
-    reload_time   : seconds to reload after burst is spent, then after every shot
-    fire_cooldown : seconds between shots within a burst (and before reload)
-    ammo_capacity : pre-loaded shells at fight start (first-stage size); default 1
+    name           : label
+    damage_health  : HP removed from target per penetrating hit
+    damage_armor   : armor-points removed per penetrating hit
+    pen_mod        : penetration modifier (1.0 = baseline)
+    reload_time    : seconds to reload after burst is spent, then after every shot
+    fire_cooldown  : seconds between shots within a burst (and before reload)
+    ammo_capacity  : pre-loaded shells at fight start (first-stage size); default 1
+    disable_chance : P(this penetrating hit disables a defender weapon) in
+                     weapon-disable mode (ignored in HP mode)
     """
     name: str
     damage_health: int
@@ -51,6 +53,7 @@ class Weapon:
     pen_mod: float
     reload_time: float
     fire_cooldown: float
+    disable_chance: float
     ammo_capacity: int = 1
 
 
@@ -175,10 +178,19 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                   velocity_mod: float = 1.0,
                   disable_threshold: float = 0.30,
                   prob_cutoff: float = 1e-12,
-                  max_shots_each: int = 300) -> dict:
+                  max_shots_each: int = 300,
+                  mode: str = "hp") -> dict:
     """
     Probabilistic 1v1 duel with independent firing schedules across all
     weapons on both tanks.
+
+    mode = "hp"             : a tank loses when its HP drops below
+                              disable_threshold * base_health (original behavior).
+    mode = "weapon-disable" : a tank loses when EITHER its HP falls below
+                              threshold OR all of its weapons are disabled.
+                              Every penetrating hit rolls the attacking weapon's
+                              disable_chance against the defender; on success the
+                              defender's highest-index live weapon is disabled.
 
     fires1 = tuple of tank1-weapon indices firing this tick (empty = none)
     fires2 = tuple of tank2-weapon indices firing this tick
@@ -186,6 +198,8 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                 that fired at tank1 this tick
     pen_on_t2 = same for tank1-weapons firing at tank2
     """
+    if mode not in ("hp", "weapon-disable"):
+        raise ValueError(f"unknown mode '{mode}'; expected 'hp' or 'weapon-disable'")
     range_bonus = range_to_bonus(range_m)
 
     # Per-hit losses indexed by attacker-weapon index
@@ -215,97 +229,265 @@ def simulate_duel(tank1: Tank, tank2: Tank,
 
     event_schedule = build_event_sequence(tank1.weapons, tank2.weapons, max_shots_each)
 
-    initial_state: Tuple[Tuple[int, ...], Tuple[int, ...]] = (
-        (0,) * len(tank2.weapons),
-        (0,) * len(tank1.weapons),
+    if mode == "hp":
+        initial_state: Tuple[Tuple[int, ...], Tuple[int, ...]] = (
+            (0,) * len(tank2.weapons),
+            (0,) * len(tank1.weapons),
+        )
+        active: Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], float] = {initial_state: 1.0}
+        p1w = p2w = psim = 0.0
+        events_data: List[dict] = []
+
+        for idx, (t, fires1, fires2) in enumerate(event_schedule, 1):
+            if not active:
+                break
+
+            # --- Per-firing-weapon pen stats across active states (display only) ---
+            pen_on_t1: Optional[List[Tuple[str, Tuple[float, float, float]]]] = None
+            pen_on_t2: Optional[List[Tuple[str, Tuple[float, float, float]]]] = None
+
+            if fires2:
+                pen_on_t1 = []
+                for wi in fires2:
+                    w = tank2.weapons[wi]
+                    stats = _pen_stats([
+                        (compute_pen_chance(tank1, w, af1(hits1), range_bonus), prob)
+                        for (hits1, _), prob in active.items()
+                    ])
+                    pen_on_t1.append((w.name, stats))
+            if fires1:
+                pen_on_t2 = []
+                for wi in fires1:
+                    w = tank1.weapons[wi]
+                    stats = _pen_stats([
+                        (compute_pen_chance(tank2, w, af2(hits2), range_bonus), prob)
+                        for (_, hits2), prob in active.items()
+                    ])
+                    pen_on_t2.append((w.name, stats))
+
+            # --- Resolve outcomes ---
+            # Order tank2-weapons before tank1-weapons so single-weapon both-fire
+            # multiplication order matches the original implementation
+            # (prob * p_hit_t1 * p_hit_t2).
+            firing: List[Tuple[int, int]] = []  # (side, weapon_index)
+            for wi in fires2:
+                firing.append((2, wi))
+            for wi in fires1:
+                firing.append((1, wi))
+
+            new_active: Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], float] = {}
+            ev1 = ev2 = evsim = 0.0
+
+            for (hits1, hits2), prob in active.items():
+                pen_probs: List[float] = []
+                for side, wi in firing:
+                    if side == 1:
+                        pen_probs.append(compute_pen_chance(
+                            tank2, tank1.weapons[wi], af2(hits2), range_bonus))
+                    else:
+                        pen_probs.append(compute_pen_chance(
+                            tank1, tank2.weapons[wi], af1(hits1), range_bonus))
+
+                for outcome_bits in product((False, True), repeat=len(firing)):
+                    p_branch = prob
+                    nh1 = list(hits1)
+                    nh2 = list(hits2)
+                    for (side, wi), pen, hit in zip(firing, pen_probs, outcome_bits):
+                        if hit:
+                            p_branch *= pen
+                            if side == 1:
+                                nh2[wi] += 1
+                            else:
+                                nh1[wi] += 1
+                        else:
+                            p_branch *= (1.0 - pen)
+
+                    if p_branch < prob_cutoff:
+                        continue
+
+                    nh1_t = tuple(nh1)
+                    nh2_t = tuple(nh2)
+                    d1 = dis1(nh1_t)
+                    d2 = dis2(nh2_t)
+                    if d1 and d2:
+                        evsim += p_branch; psim += p_branch
+                    elif d1:
+                        ev2 += p_branch; p2w += p_branch
+                    elif d2:
+                        ev1 += p_branch; p1w += p_branch
+                    else:
+                        key = (nh1_t, nh2_t)
+                        new_active[key] = new_active.get(key, 0.0) + p_branch
+
+            active = new_active
+            events_data.append({
+                "event": idx, "time": t,
+                "tank1_fired": bool(fires1), "tank2_fired": bool(fires2),
+                "pen_on_t1": pen_on_t1,
+                "pen_on_t2": pen_on_t2,
+                "tank1_wins_this_event": ev1, "tank2_wins_this_event": ev2,
+                "simultaneous_this_event": evsim,
+                "cumulative_tank1_wins": p1w, "cumulative_tank2_wins": p2w,
+                "cumulative_simultaneous": psim,
+                "remaining_probability": sum(active.values()),
+                "active_states": len(active),
+            })
+
+        return {
+            "tank1_wins": p1w, "tank2_wins": p2w, "simultaneous": psim,
+            "tank1_wins_by_hp": p1w, "tank1_wins_by_disable": 0.0,
+            "tank2_wins_by_hp": p2w, "tank2_wins_by_disable": 0.0,
+            "unresolved": sum(active.values()),
+            "events": events_data,
+            "range_m": range_m,
+            "initial_armor_frac1": initial_armor_frac1,
+            "initial_armor_frac2": initial_armor_frac2,
+            "mode": mode,
+        }
+
+    # -----------------------------------------------------------------------
+    # Weapon-disable mode (parallel implementation; state carries d1, d2)
+    # -----------------------------------------------------------------------
+    n1 = len(tank1.weapons)
+    n2 = len(tank2.weapons)
+    dc_t1_weapons = [w.disable_chance for w in tank1.weapons]  # rolls against tank2
+    dc_t2_weapons = [w.disable_chance for w in tank2.weapons]  # rolls against tank1
+
+    initial_state_wd: Tuple[Tuple[int, ...], Tuple[int, ...], int, int] = (
+        (0,) * n2,
+        (0,) * n1,
+        0,
+        0,
     )
-    active: Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], float] = {initial_state: 1.0}
+    active_wd: Dict[Tuple[Tuple[int, ...], Tuple[int, ...], int, int], float] = {
+        initial_state_wd: 1.0
+    }
     p1w = p2w = psim = 0.0
-    events_data: List[dict] = []
+    p1w_hp = p1w_dis = p2w_hp = p2w_dis = 0.0
+    events_data_wd: List[dict] = []
 
     for idx, (t, fires1, fires2) in enumerate(event_schedule, 1):
-        if not active:
+        if not active_wd:
             break
 
-        # --- Per-firing-weapon pen stats across active states (display only) ---
+        # Pen stats restricted to states where the firing weapon is still live
         pen_on_t1: Optional[List[Tuple[str, Tuple[float, float, float]]]] = None
         pen_on_t2: Optional[List[Tuple[str, Tuple[float, float, float]]]] = None
-
         if fires2:
             pen_on_t1 = []
             for wi in fires2:
                 w = tank2.weapons[wi]
-                stats = _pen_stats([
+                pairs = [
                     (compute_pen_chance(tank1, w, af1(hits1), range_bonus), prob)
-                    for (hits1, _), prob in active.items()
-                ])
-                pen_on_t1.append((w.name, stats))
+                    for (hits1, _, _, d2_s), prob in active_wd.items()
+                    if wi < n2 - d2_s
+                ]
+                pen_on_t1.append((w.name, _pen_stats(pairs)))
         if fires1:
             pen_on_t2 = []
             for wi in fires1:
                 w = tank1.weapons[wi]
-                stats = _pen_stats([
+                pairs = [
                     (compute_pen_chance(tank2, w, af2(hits2), range_bonus), prob)
-                    for (_, hits2), prob in active.items()
-                ])
-                pen_on_t2.append((w.name, stats))
+                    for (_, hits2, d1_s, _), prob in active_wd.items()
+                    if wi < n1 - d1_s
+                ]
+                pen_on_t2.append((w.name, _pen_stats(pairs)))
 
-        # --- Resolve outcomes ---
-        # Order tank2-weapons before tank1-weapons so single-weapon both-fire
-        # multiplication order matches the original implementation
-        # (prob * p_hit_t1 * p_hit_t2).
-        firing: List[Tuple[int, int]] = []  # (side, weapon_index)
+        # tank2-then-tank1 firing order, matching HP mode's multiplication order
+        firing_global: List[Tuple[int, int]] = []
         for wi in fires2:
-            firing.append((2, wi))
+            firing_global.append((2, wi))
         for wi in fires1:
-            firing.append((1, wi))
+            firing_global.append((1, wi))
 
-        new_active: Dict[Tuple[Tuple[int, ...], Tuple[int, ...]], float] = {}
+        new_active_wd: Dict[Tuple[Tuple[int, ...], Tuple[int, ...], int, int], float] = {}
         ev1 = ev2 = evsim = 0.0
 
-        for (hits1, hits2), prob in active.items():
+        for (hits1, hits2, d1_s, d2_s), prob in active_wd.items():
+            # Drop firings whose weapon is already disabled in this state
+            firing = [
+                (s, wi) for (s, wi) in firing_global
+                if (wi < (n1 if s == 1 else n2) - (d1_s if s == 1 else d2_s))
+            ]
+
+            if not firing:
+                key = (hits1, hits2, d1_s, d2_s)
+                new_active_wd[key] = new_active_wd.get(key, 0.0) + prob
+                continue
+
             pen_probs: List[float] = []
+            disable_chances: List[float] = []
             for side, wi in firing:
                 if side == 1:
                     pen_probs.append(compute_pen_chance(
                         tank2, tank1.weapons[wi], af2(hits2), range_bonus))
+                    disable_chances.append(dc_t1_weapons[wi])
                 else:
                     pen_probs.append(compute_pen_chance(
                         tank1, tank2.weapons[wi], af1(hits1), range_bonus))
+                    disable_chances.append(dc_t2_weapons[wi])
 
-            for outcome_bits in product((False, True), repeat=len(firing)):
+            # Per firing weapon: 0=miss, 1=pen-no-disable, 2=pen-and-disable
+            for outcome in product((0, 1, 2), repeat=len(firing)):
                 p_branch = prob
                 nh1 = list(hits1)
                 nh2 = list(hits2)
-                for (side, wi), pen, hit in zip(firing, pen_probs, outcome_bits):
-                    if hit:
-                        p_branch *= pen
+                nd1 = d1_s
+                nd2 = d2_s
+                for (side, wi), pen, dc, o in zip(firing, pen_probs, disable_chances, outcome):
+                    if o == 0:
+                        p_branch *= (1.0 - pen)
+                    elif o == 1:
+                        p_branch *= pen * (1.0 - dc)
                         if side == 1:
                             nh2[wi] += 1
                         else:
                             nh1[wi] += 1
-                    else:
-                        p_branch *= (1.0 - pen)
+                    else:  # o == 2
+                        p_branch *= pen * dc
+                        if side == 1:
+                            nh2[wi] += 1
+                            nd2 = min(n2, nd2 + 1)
+                        else:
+                            nh1[wi] += 1
+                            nd1 = min(n1, nd1 + 1)
 
                 if p_branch < prob_cutoff:
                     continue
 
                 nh1_t = tuple(nh1)
                 nh2_t = tuple(nh2)
-                d1 = dis1(nh1_t)
-                d2 = dis2(nh2_t)
-                if d1 and d2:
-                    evsim += p_branch; psim += p_branch
-                elif d1:
-                    ev2 += p_branch; p2w += p_branch
-                elif d2:
-                    ev1 += p_branch; p1w += p_branch
-                else:
-                    key = (nh1_t, nh2_t)
-                    new_active[key] = new_active.get(key, 0.0) + p_branch
+                hp1_down = dis1(nh1_t)
+                hp2_down = dis2(nh2_t)
+                d1_full = (nd1 == n1)
+                d2_full = (nd2 == n2)
+                t1_lost = hp1_down or d1_full
+                t2_lost = hp2_down or d2_full
 
-        active = new_active
-        events_data.append({
+                if t1_lost and t2_lost:
+                    evsim += p_branch
+                    psim += p_branch
+                elif t1_lost:
+                    ev2 += p_branch
+                    p2w += p_branch
+                    if hp1_down:
+                        p2w_hp += p_branch
+                    else:
+                        p2w_dis += p_branch
+                elif t2_lost:
+                    ev1 += p_branch
+                    p1w += p_branch
+                    if hp2_down:
+                        p1w_hp += p_branch
+                    else:
+                        p1w_dis += p_branch
+                else:
+                    key = (nh1_t, nh2_t, nd1, nd2)
+                    new_active_wd[key] = new_active_wd.get(key, 0.0) + p_branch
+
+        active_wd = new_active_wd
+        events_data_wd.append({
             "event": idx, "time": t,
             "tank1_fired": bool(fires1), "tank2_fired": bool(fires2),
             "pen_on_t1": pen_on_t1,
@@ -314,17 +496,20 @@ def simulate_duel(tank1: Tank, tank2: Tank,
             "simultaneous_this_event": evsim,
             "cumulative_tank1_wins": p1w, "cumulative_tank2_wins": p2w,
             "cumulative_simultaneous": psim,
-            "remaining_probability": sum(active.values()),
-            "active_states": len(active),
+            "remaining_probability": sum(active_wd.values()),
+            "active_states": len(active_wd),
         })
 
     return {
         "tank1_wins": p1w, "tank2_wins": p2w, "simultaneous": psim,
-        "unresolved": sum(active.values()),
-        "events": events_data,
+        "tank1_wins_by_hp": p1w_hp, "tank1_wins_by_disable": p1w_dis,
+        "tank2_wins_by_hp": p2w_hp, "tank2_wins_by_disable": p2w_dis,
+        "unresolved": sum(active_wd.values()),
+        "events": events_data_wd,
         "range_m": range_m,
         "initial_armor_frac1": initial_armor_frac1,
         "initial_armor_frac2": initial_armor_frac2,
+        "mode": mode,
     }
 
 
@@ -344,6 +529,12 @@ def print_duel_summary(tank1: Tank, tank2: Tank, result: dict) -> None:
     if result["unresolved"] > 1e-6:
         print(f"  Unresolved (> max shots)   : {result['unresolved']*100:6.2f} %")
     print(f"  Total resolved             : {total*100:6.2f} %")
+    if result.get("mode") == "weapon-disable":
+        print(f"  -- by trigger --")
+        print(f"  {tank1.name:<22} wins by HP      : {result['tank1_wins_by_hp']*100:6.2f} %")
+        print(f"  {tank1.name:<22} wins by disable : {result['tank1_wins_by_disable']*100:6.2f} %")
+        print(f"  {tank2.name:<22} wins by HP      : {result['tank2_wins_by_hp']*100:6.2f} %")
+        print(f"  {tank2.name:<22} wins by disable : {result['tank2_wins_by_disable']*100:6.2f} %")
     print(sep)
     for ev in result["events"]:
         c = (ev["cumulative_tank1_wins"] + ev["cumulative_tank2_wins"]
@@ -412,6 +603,11 @@ DEFAULT_TANKS_FILE = Path(__file__).with_name("tanks.json")
 
 
 def _make_weapon(w: dict) -> Weapon:
+    if "disable_chance" not in w:
+        raise KeyError(
+            f"weapon '{w.get('name', '<unnamed>')}' is missing required "
+            f"field 'disable_chance' (float, 0.0-1.0)"
+        )
     return Weapon(
         name=w["name"],
         damage_health=w["damage_health"],
@@ -419,6 +615,7 @@ def _make_weapon(w: dict) -> Weapon:
         pen_mod=w["pen_mod"],
         reload_time=w["reload_time"],
         fire_cooldown=w["fire_cooldown"],
+        disable_chance=w["disable_chance"],
         ammo_capacity=w.get("ammo_capacity", 1),
     )
 
@@ -468,6 +665,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--shots", type=int, default=15, help="shot-log length (default 15)")
     parser.add_argument("--tanks-file", type=Path, default=DEFAULT_TANKS_FILE,
                         help=f"path to tanks JSON (default {DEFAULT_TANKS_FILE.name})")
+    parser.add_argument("--mode", choices=("hp", "weapon-disable"), default="hp",
+                        help="win condition: 'hp' (default) or 'weapon-disable' "
+                             "(losing all weapons also disables the tank)")
     args = parser.parse_args(argv)
 
     if args.tanks_file != DEFAULT_TANKS_FILE:
@@ -486,6 +686,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         initial_armor_frac1=args.armor1,
         initial_armor_frac2=args.armor2,
         range_m=args.range_m,
+        mode=args.mode,
     )
     print_duel_summary(t1, t2, result)
     print_shot_log(t1, t2, result, n=args.shots)
