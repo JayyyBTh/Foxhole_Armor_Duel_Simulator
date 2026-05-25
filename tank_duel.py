@@ -668,6 +668,75 @@ def load_tanks(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, Tank]:
 
 
 # ---------------------------------------------------------------------------
+# Sanity-check test suite
+# ---------------------------------------------------------------------------
+
+TEST_TANKS_FILE = Path(__file__).with_name("tanks_test.json")
+
+# Each entry: (name, tank1_key, armor1, tank2_key, armor2, range_m, mode,
+#              shots_to_show, description). Order matters — it determines
+# the output order, which the user diffs against a known-good copy.
+_TEST_SCENARIOS: List[Tuple[str, str, float, str, float, float, str, int, str]] = [
+    (
+        "hp_tiny_one_shot_each",
+        "toy_5hp", 1.0, "toy_5hp", 1.0, 30.0, "hp", 8,
+        "5 HP, 1-dmg, both fire every 1.0s starting t=0. Symmetric race.",
+    ),
+    (
+        "hp_tiny_speed_mismatch",
+        "toy_5hp_fast", 1.0, "toy_5hp", 1.0, 30.0, "hp", 10,
+        "Fast (fc=0.5s) vs slow (fc=1.0s). Fast should win clean.",
+    ),
+    (
+        "disable_one_shot_glass",
+        "toy_attacker", 1.0, "toy_5hp_glass", 1.0, 30.0, "weapon-disable", 4,
+        "Attacker fires; glass target has dc=1.0 and never fires. First pen wins.",
+    ),
+    (
+        "disable_cascade_sequential_2weap",
+        "toy_attacker", 1.0, "toy_2weap_cascade", 1.0, 30.0, "weapon-disable", 10,
+        "1 attacker shot/tick vs inert 2-weapon target (dc=[0.5, 1.0]). "
+        "Tick1: dc=1.0 always disables w1. Tick N: dc=0.5 on w0, geometric.",
+    ),
+    (
+        "disable_cascade_simultaneous_3weap",
+        "toy_3weap_attacker", 1.0, "toy_3weap_cascade", 1.0, 30.0, "weapon-disable", 6,
+        "3 attacker weapons fire simultaneously at t=0,2,... vs inert 3-weapon "
+        "target (dc=[0.0, 0.5, 1.0]). w0 (dc=0.0) never falls -> HP must finish it.",
+    ),
+]
+
+
+def run_test_suite() -> int:
+    """Run the sanity-check scenarios from tanks_test.json. Output is fully
+    deterministic; pipe to a file and diff against a known-good copy to spot
+    regressions.
+    """
+    library = load_tanks(TEST_TANKS_FILE)
+    sep = "=" * 70
+
+    for name, t1k, a1, t2k, a2, rng, mode, shots, desc in _TEST_SCENARIOS:
+        print(sep)
+        print(f"  TEST: {name}")
+        print(f"  {desc}")
+        print(sep)
+        t1 = library[t1k]
+        t2 = library[t2k]
+        result = simulate_duel(
+            tank1=t1, tank2=t2,
+            initial_armor_frac1=a1, initial_armor_frac2=a2,
+            range_m=rng, mode=mode,
+        )
+        print_duel_summary(t1, t2, result)
+        print_shot_log(t1, t2, result, n=shots)
+        total = (result["tank1_wins"] + result["tank2_wins"]
+                 + result["simultaneous"] + result["unresolved"])
+        print(f"  prob conservation: {total:.10f}")
+        print()
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -679,18 +748,39 @@ def main(argv: Optional[List[str]] = None) -> int:
         description="Simulate a 1v1 Foxhole tank duel.",
         epilog=f"Available tanks: {', '.join(tank_keys)}",
     )
-    parser.add_argument("tank1", help="lookup key of tank 1 (see list below)")
-    parser.add_argument("armor1", type=float, help="tank 1 initial armor fraction (0.0-1.0)")
-    parser.add_argument("tank2", help="lookup key of tank 2")
-    parser.add_argument("armor2", type=float, help="tank 2 initial armor fraction (0.0-1.0)")
-    parser.add_argument("range_m", type=float, help="engagement range in metres")
+    parser.add_argument("tank1", nargs="?", help="lookup key of tank 1 (see list below)")
+    parser.add_argument("armor1", type=float, nargs="?",
+                        help="tank 1 initial armor fraction (0.0-1.0)")
+    parser.add_argument("tank2", nargs="?", help="lookup key of tank 2")
+    parser.add_argument("armor2", type=float, nargs="?",
+                        help="tank 2 initial armor fraction (0.0-1.0)")
+    parser.add_argument("range_m", type=float, nargs="?",
+                        help="engagement range in metres")
     parser.add_argument("--shots", type=int, default=15, help="shot-log length (default 15)")
     parser.add_argument("--tanks-file", type=Path, default=DEFAULT_TANKS_FILE,
                         help=f"path to tanks JSON (default {DEFAULT_TANKS_FILE.name})")
     parser.add_argument("--mode", choices=("hp", "weapon-disable"), default="hp",
                         help="win condition: 'hp' (default) or 'weapon-disable' "
                              "(losing all weapons also disables the tank)")
+    parser.add_argument("--tests", action="store_true",
+                        help="run the sanity-check suite from tanks_test.json "
+                             "instead of a single duel; positional args ignored")
     args = parser.parse_args(argv)
+
+    if args.tests:
+        return run_test_suite()
+
+    # Validate positionals (only required when not running --tests)
+    missing = [
+        name for name, val in [
+            ("tank1", args.tank1), ("armor1", args.armor1),
+            ("tank2", args.tank2), ("armor2", args.armor2),
+            ("range_m", args.range_m),
+        ] if val is None
+    ]
+    if missing:
+        parser.error(f"missing required arguments: {', '.join(missing)} "
+                     f"(use --tests to run the sanity-check suite instead)")
 
     if args.tanks_file != DEFAULT_TANKS_FILE:
         library = load_tanks(args.tanks_file)

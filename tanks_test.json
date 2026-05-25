@@ -1,0 +1,177 @@
+{
+  "toy_5hp": {
+    "name": "Toy5HP",
+    "base_health": 5,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapon": {
+      "name": "Toy 1dmg slow",
+      "damage_health": 1,
+      "damage_armor": 1,
+      "pen_mod": 1.0,
+      "reload_time": 1.0,
+      "fire_cooldown": 1.0,
+      "ammo_capacity": 99,
+      "disable_chance": 0.0
+    }
+  },
+  "toy_5hp_fast": {
+    "name": "Toy5HPFast",
+    "base_health": 5,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapon": {
+      "name": "Toy 1dmg fast",
+      "damage_health": 1,
+      "damage_armor": 1,
+      "pen_mod": 1.0,
+      "reload_time": 0.5,
+      "fire_cooldown": 0.5,
+      "ammo_capacity": 99,
+      "disable_chance": 0.0
+    }
+  },
+  "toy_5hp_glass": {
+    "name": "Toy5HPGlass",
+    "base_health": 5,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapon": {
+      "name": "Glass inert weapon",
+      "damage_health": 1,
+      "damage_armor": 1,
+      "pen_mod": 1.0,
+      "reload_time": 10000,
+      "fire_cooldown": 10000,
+      "ammo_capacity": 0,
+      "disable_chance": 1.0
+    }
+  },
+  "toy_attacker": {
+    "name": "ToyAttacker",
+    "base_health": 100,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapon": {
+      "name": "Attacker 1dmg",
+      "damage_health": 1,
+      "damage_armor": 1,
+      "pen_mod": 1.0,
+      "reload_time": 1.0,
+      "fire_cooldown": 1.0,
+      "ammo_capacity": 99,
+      "disable_chance": 0.0
+    }
+  },
+  "toy_3weap_attacker": {
+    "name": "Toy3WeapAttacker",
+    "base_health": 100,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapons": [
+      {
+        "name": "Attacker w0",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 1.0,
+        "fire_cooldown": 1.0,
+        "ammo_capacity": 99,
+        "disable_chance": 0.0
+      },
+      {
+        "name": "Attacker w1",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 1.0,
+        "fire_cooldown": 1.0,
+        "ammo_capacity": 99,
+        "disable_chance": 0.0
+      },
+      {
+        "name": "Attacker w2",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 1.0,
+        "fire_cooldown": 1.0,
+        "ammo_capacity": 99,
+        "disable_chance": 0.0
+      }
+    ]
+  },
+  "toy_2weap_cascade": {
+    "name": "Toy2WeapCascade",
+    "base_health": 100,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapons": [
+      {
+        "name": "Cascade2 w0 dc=0.5",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 10000,
+        "fire_cooldown": 10000,
+        "ammo_capacity": 0,
+        "disable_chance": 0.5
+      },
+      {
+        "name": "Cascade2 w1 dc=1.0",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 10000,
+        "fire_cooldown": 10000,
+        "ammo_capacity": 0,
+        "disable_chance": 1.0
+      }
+    ]
+  },
+  "toy_3weap_cascade": {
+    "name": "Toy3WeapCascade",
+    "base_health": 5,
+    "base_armor": 1,
+    "base_pen_chance": 1.0,
+    "pre_bonus_cap": 1.0,
+    "weapons": [
+      {
+        "name": "Cascade3 w0 dc=0.0",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 10000,
+        "fire_cooldown": 10000,
+        "ammo_capacity": 0,
+        "disable_chance": 0.0
+      },
+      {
+        "name": "Cascade3 w1 dc=0.5",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 10000,
+        "fire_cooldown": 10000,
+        "ammo_capacity": 0,
+        "disable_chance": 0.5
+      },
+      {
+        "name": "Cascade3 w2 dc=1.0",
+        "damage_health": 1,
+        "damage_armor": 1,
+        "pen_mod": 1.0,
+        "reload_time": 10000,
+        "fire_cooldown": 10000,
+        "ammo_capacity": 0,
+        "disable_chance": 1.0
+      }
+    ]
+  }
+}
