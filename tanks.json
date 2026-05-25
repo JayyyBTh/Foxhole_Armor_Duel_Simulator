@@ -126,5 +126,59 @@
       "fire_cooldown": 1.5,
       "ammo_capacity": 3
     }
+  },
+  "silverhand": {
+    "name": "Silverhand",
+    "base_health": 3100,
+    "base_armor": 13300,
+    "base_pen_chance": 0.27,
+    "pre_bonus_cap": 0.67,
+    "weapons": [
+      {
+        "name": "Turret 40mm",
+        "damage_health": 510,
+        "damage_armor": 510,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1
+      },
+      {
+        "name": "Casemate 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 5.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1
+      }
+    ]
+  },
+  "update_svh": {
+    "name": "Update Silverhand",
+    "base_health": 3100,
+    "base_armor": 17000,
+    "base_pen_chance": 0.25,
+    "pre_bonus_cap": 0.67,
+    "weapons": [
+      {
+        "name": "Turret 40mm",
+        "damage_health": 510,
+        "damage_armor": 510,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1
+      },
+      {
+        "name": "Casemate 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 4.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1
+      }
+    ]
   }
 }
