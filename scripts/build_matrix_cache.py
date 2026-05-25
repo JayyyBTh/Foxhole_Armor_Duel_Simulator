@@ -23,7 +23,10 @@ RANGE_M = 30.0
 ARMOR_STEPS = [round(i * 0.05, 4) for i in range(21)]  # 0.00 .. 1.00
 
 
-def build_matrix(tank_keys: list[str], library, armor: float) -> list[list[float]]:
+MODES = ("hp", "weapon-disable")
+
+
+def build_matrix(tank_keys: list[str], library, armor: float, mode: str) -> list[list[float]]:
     n = len(tank_keys)
     matrix = [[0.0] * n for _ in range(n)]
     for i, a_key in enumerate(tank_keys):
@@ -31,7 +34,7 @@ def build_matrix(tank_keys: list[str], library, armor: float) -> list[list[float
             result = simulate_duel(
                 tank1=library[a_key], tank2=library[b_key],
                 initial_armor_frac1=armor, initial_armor_frac2=armor,
-                range_m=RANGE_M,
+                range_m=RANGE_M, mode=mode,
             )
             matrix[i][j] = result["tank1_wins"]
     return matrix
@@ -74,18 +77,22 @@ def main() -> int:
     tank_keys = sorted(library.keys())
     print(f"tanks ({len(tank_keys)}): {tank_keys}")
 
-    matrices = []
+    matrices: dict[str, list] = {m: [] for m in MODES}
     for step_idx, armor in enumerate(ARMOR_STEPS):
         print(f"  step {step_idx+1}/{len(ARMOR_STEPS)}  armor={armor:.2f}")
-        m = build_matrix(tank_keys, library, armor)
-        matrices.append(m)
-        write_png(m, tank_keys, armor, PNG_DIR / f"matrix_{step_idx:02d}.png")
+        for mode in MODES:
+            m = build_matrix(tank_keys, library, armor, mode)
+            matrices[mode].append(m)
+            if mode == "hp":
+                # PNG frames and animation are HP-mode only (slide deck headline)
+                write_png(m, tank_keys, armor, PNG_DIR / f"matrix_{step_idx:02d}.png")
 
     payload = {
         "range_m": RANGE_M,
         "tanks": tank_keys,
         "tank_names": [library[k].name for k in tank_keys],
         "armor_steps": ARMOR_STEPS,
+        "modes": list(MODES),
         "matrices": matrices,
     }
     OUT_JSON.write_text(json.dumps(payload), encoding="utf-8")

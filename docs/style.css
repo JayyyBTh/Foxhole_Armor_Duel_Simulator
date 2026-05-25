@@ -136,6 +136,21 @@ header a { color: var(--accent); }
 
 #matrix-container { overflow-x: auto; }
 
+.mode-toggle {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.mode-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
 footer { color: var(--muted); font-size: 0.85rem; }
 footer a { color: var(--accent); }
 

@@ -32,7 +32,12 @@ def main() -> int:
     data = json.loads(CACHE.read_text(encoding="utf-8"))
     tanks = data["tanks"]
     steps = data["armor_steps"]
-    mats = [np.array(m) for m in data["matrices"]]
+    # Animation is HP-mode (the headline matrix). Fall back to the legacy
+    # flat "matrices" key for old caches.
+    raw = data["matrices"]
+    if isinstance(raw, dict):
+        raw = raw["hp"]
+    mats = [np.array(m) for m in raw]
     range_m = data["range_m"]
     n = len(tanks)
 

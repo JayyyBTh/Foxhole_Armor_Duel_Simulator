@@ -6,8 +6,22 @@
   const slider = document.getElementById("armor-slider");
   const readout = document.getElementById("armor-readout");
   const container = document.getElementById("matrix-container");
+  const modeRadios = document.querySelectorAll('input[name="matrix-mode"]');
 
   let cache = null;
+
+  function currentMode() {
+    for (const r of modeRadios) if (r.checked) return r.value;
+    return "hp";
+  }
+
+  function matricesForMode(mode) {
+    // New cache shape: matrices is { hp: [...], "weapon-disable": [...] }.
+    // Legacy shape: matrices is a flat list (HP only).
+    const m = cache.matrices;
+    if (Array.isArray(m)) return m;
+    return m[mode] || m.hp;
+  }
 
   function colorFor(p) {
     // 0 = red, 0.5 = yellow, 1 = green.
@@ -16,7 +30,7 @@
   }
 
   function renderTable(step) {
-    const m = cache.matrices[step];
+    const m = matricesForMode(currentMode())[step];
     const keys = cache.tanks;
     const names = cache.tank_names || keys;
     const tbl = document.createElement("table");
@@ -69,6 +83,12 @@
       slider.value = cache.armor_steps.length - 1; // default: full armor
       slider.disabled = false;
       slider.addEventListener("input", onSlide);
+      modeRadios.forEach(r => r.addEventListener("change", onSlide));
+      // Hide the mode toggle if the cache only has one mode (legacy shape).
+      if (Array.isArray(cache.matrices)) {
+        const toggle = document.getElementById("matrix-mode");
+        if (toggle) toggle.style.display = "none";
+      }
       onSlide();
     } catch (e) {
       console.error(e);
