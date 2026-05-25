@@ -58,10 +58,12 @@
     </section>
 
     <section class="card">
-      <h2>Win-rate matrix (shared armor)</h2>
+      <h2>Cross-faction win-rate matrices</h2>
       <p class="muted">
-        Precomputed at range = 30 m, both tanks at the same armor fraction.
-        Drag the slider; values are P(row tank beats column tank).
+        Precomputed at range = 30 m with both sides at the same armor
+        fraction. Drag the slider for armor; toggle the mode. Each cell is
+        P(row tank beats column tank) from the same simulation &mdash; the
+        two grids are mirror sides of the same matchup.
       </p>
       <div id="matrix-controls">
         <input type="range" id="armor-slider" min="0" max="0" step="1" value="0" disabled />
@@ -71,8 +73,15 @@
         <label><input type="radio" name="matrix-mode" value="hp" checked /> HP</label>
         <label><input type="radio" name="matrix-mode" value="weapon-disable" /> weapon-disable</label>
       </div>
-      <div id="matrix-container">
-        <p class="muted">Loading matrix cache&hellip;</p>
+      <div class="matrix-pair">
+        <div class="matrix-block">
+          <h3 id="matrix-wc-title">Warden &times; Colonial</h3>
+          <div id="matrix-wc"><p class="muted">Loading matrix cache&hellip;</p></div>
+        </div>
+        <div class="matrix-block">
+          <h3 id="matrix-cw-title">Colonial &times; Warden</h3>
+          <div id="matrix-cw"></div>
+        </div>
       </div>
     </section>
   </main>

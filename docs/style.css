@@ -131,10 +131,31 @@ header a { color: var(--accent); }
 }
 
 .matrix th.row-head { text-align: right; }
+.matrix th.corner { font-size: 0.7rem; font-style: italic; }
 
 .matrix td { color: #0b0e12; font-weight: 600; }
 
 #matrix-container { overflow-x: auto; }
+
+.matrix-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.matrix-block {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.matrix-block h3 {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  font-weight: 500;
+}
 
 .mode-toggle {
   display: flex;

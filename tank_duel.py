@@ -642,16 +642,48 @@ def _make_weapon(w: dict) -> Weapon:
     )
 
 
+def _is_tank_entry(entry: dict) -> bool:
+    """A tank entry has 'weapon' or 'weapons'. A faction bucket has neither
+    at its top level (its values are tank entries)."""
+    return isinstance(entry, dict) and ("weapon" in entry or "weapons" in entry)
+
+
+def _flatten_factions(data: dict) -> Tuple[Dict[str, dict], Dict[str, str]]:
+    """Return (key -> raw entry, key -> faction). Accepts either:
+      - flat:    { tank_key: entry, ... }                (legacy / test file)
+      - nested:  { faction: { tank_key: entry, ... } }   (current main library)
+    """
+    if not data:
+        return {}, {}
+    sample = next(iter(data.values()))
+    if _is_tank_entry(sample):
+        return dict(data), {k: "" for k in data}
+    flat: Dict[str, dict] = {}
+    factions: Dict[str, str] = {}
+    for faction, bucket in data.items():
+        if not isinstance(bucket, dict):
+            raise ValueError(f"faction '{faction}' is not an object")
+        for key, entry in bucket.items():
+            if key in flat:
+                raise ValueError(f"tank key '{key}' appears in multiple factions")
+            flat[key] = entry
+            factions[key] = faction
+    return flat, factions
+
+
 def load_tanks(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, Tank]:
     """Load tank definitions from a JSON file. Keys are lookup IDs.
 
-    Each entry must provide either a single "weapon" dict or a "weapons"
-    list. Single-weapon tanks may use either form.
+    The JSON may be either a flat `{ tank_key: entry, ... }` dict (legacy)
+    or grouped by faction: `{ faction: { tank_key: entry, ... } }`. Each
+    tank entry must provide either a single "weapon" dict or a "weapons"
+    list.
     """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
+    flat, _factions = _flatten_factions(data)
     tanks: Dict[str, Tank] = {}
-    for key, entry in data.items():
+    for key, entry in flat.items():
         if "weapons" in entry:
             weapons = [_make_weapon(w) for w in entry["weapons"]]
         else:
@@ -665,6 +697,15 @@ def load_tanks(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, Tank]:
             weapons=weapons,
         )
     return tanks
+
+
+def load_factions(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, str]:
+    """Return `{tank_key: faction_name}`. Empty-string faction for flat-shape
+    JSON files (the test library has no factions)."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    _flat, factions = _flatten_factions(data)
+    return factions
 
 
 # ---------------------------------------------------------------------------

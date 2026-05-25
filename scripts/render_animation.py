@@ -30,38 +30,55 @@ def main() -> int:
     import numpy as np
 
     data = json.loads(CACHE.read_text(encoding="utf-8"))
-    tanks = data["tanks"]
     steps = data["armor_steps"]
-    # Animation is HP-mode (the headline matrix). Fall back to the legacy
-    # flat "matrices" key for old caches.
+    range_m = data["range_m"]
+
+    # Cross-faction shape: row_tanks × col_tanks. Fall back to legacy
+    # symmetric "tanks" key + flat or dict "matrices" for old caches.
+    if "row_tanks" in data:
+        row_keys = data["row_tanks"]
+        col_keys = data["col_tanks"]
+        row_labels = data.get("row_names", row_keys)
+        col_labels = data.get("col_names", col_keys)
+        row_faction = data.get("row_faction", "row")
+        col_faction = data.get("col_faction", "col")
+    else:
+        row_keys = col_keys = data["tanks"]
+        row_labels = col_labels = data.get("tank_names", data["tanks"])
+        row_faction = col_faction = ""
+
+    # Animation tracks HP / Warden-rows ("wc"). Tolerate older cache shapes:
+    #   v3: { mode: { "wc": [...], "cw": [...] } }
+    #   v2: { mode: [...] }
+    #   v1: [...] (HP-only flat list)
     raw = data["matrices"]
     if isinstance(raw, dict):
         raw = raw["hp"]
+    if isinstance(raw, dict):
+        raw = raw["wc"]
     mats = [np.array(m) for m in raw]
-    range_m = data["range_m"]
-    n = len(tanks)
+    nr, nc = len(row_keys), len(col_keys)
 
-    fig, ax = plt.subplots(figsize=(0.6 * n + 2, 0.6 * n + 1.5))
+    fig, ax = plt.subplots(figsize=(0.7 * nc + 2.5, 0.6 * nr + 2))
     im = ax.imshow(mats[0], vmin=0.0, vmax=1.0, cmap="RdYlGn")
-    ax.set_xticks(range(n))
-    ax.set_yticks(range(n))
-    ax.set_xticklabels(tanks, rotation=45, ha="right")
-    ax.set_yticklabels(tanks)
-    ax.set_xlabel("opponent")
-    ax.set_ylabel("attacker")
+    ax.set_xticks(range(nc))
+    ax.set_yticks(range(nr))
+    ax.set_xticklabels(col_labels, rotation=45, ha="right")
+    ax.set_yticklabels(row_labels)
+    ax.set_xlabel(f"{col_faction.title() or 'opponent'} (defender)")
+    ax.set_ylabel(f"{row_faction.title() or 'attacker'} (attacker)")
     title = ax.set_title("")
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
-    # Cell labels updated each frame.
     texts = [[ax.text(j, i, "", ha="center", va="center", color="black", fontsize=8)
-              for j in range(n)] for i in range(n)]
+              for j in range(nc)] for i in range(nr)]
 
     def update(frame):
         m = mats[frame]
         im.set_data(m)
         title.set_text(f"P(row beats column) @ armor = {steps[frame]:.2f}, range = {int(range_m)} m")
-        for i in range(n):
-            for j in range(n):
+        for i in range(nr):
+            for j in range(nc):
                 texts[i][j].set_text(f"{m[i, j]*100:.0f}")
         return [im, title] + [t for row in texts for t in row]
 
