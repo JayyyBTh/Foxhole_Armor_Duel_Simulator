@@ -1,0 +1,196 @@
+{
+  "bardiche": {
+    "name": "Bardiche",
+    "base_health": 4000,
+    "base_armor": 15650,
+    "base_pen_chance": 0.23,
+    "pre_bonus_cap": 0.67,
+    "weapon": {
+      "name": "Bardiche 68mm",
+      "damage_health": 600,
+      "damage_armor": 600,
+      "pen_mod": 1.5,
+      "reload_time": 4.5,
+      "fire_cooldown": 0.8,
+      "ammo_capacity": 2,
+      "disable_chance": 0.15
+    }
+  },
+  "update_bard": {
+    "name": "Update Bard",
+    "base_health": 4000,
+    "base_armor": 15650,
+    "base_pen_chance": 0.23,
+    "pre_bonus_cap": 0.67,
+    "weapon": {
+      "name": "Update Bard 68mm",
+      "damage_health": 600,
+      "damage_armor": 600,
+      "pen_mod": 1.5,
+      "reload_time": 4.5,
+      "fire_cooldown": 0.8,
+      "ammo_capacity": 3,
+      "disable_chance": 0.15
+    }
+  },
+  "htd": {
+    "name": "HTD",
+    "base_health": 2200,
+    "base_armor": 17650,
+    "base_pen_chance": 0.17,
+    "pre_bonus_cap": 0.50,
+    "weapon": {
+      "name": "HTD gun",
+      "damage_health": 1050,
+      "damage_armor": 1050,
+      "pen_mod": 1.5,
+      "reload_time": 4.5,
+      "fire_cooldown": 2.0,
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
+    }
+  },
+  "update_htd": {
+    "name": "Update HTD",
+    "base_health": 2200,
+    "base_armor": 17650,
+    "base_pen_chance": 0.22,
+    "pre_bonus_cap": 0.50,
+    "weapon": {
+      "name": "Update HTD gun",
+      "damage_health": 1050,
+      "damage_armor": 1050,
+      "pen_mod": 1.5,
+      "reload_time": 4.5,
+      "fire_cooldown": 2.0,
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
+    }
+  },
+  "spatha": {
+    "name": "Spatha",
+    "base_health": 3650,
+    "base_armor": 13550,
+    "base_pen_chance": 0.33,
+    "pre_bonus_cap": 0.67,
+    "weapon": {
+      "name": "Spatha 40mm",
+      "damage_health": 561,
+      "damage_armor": 561,
+      "pen_mod": 1.0,
+      "reload_time": 3,
+      "fire_cooldown": 1.5,
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
+    }
+  },
+  "update_spatha": {
+    "name": "Update Spatha",
+    "base_health": 3650,
+    "base_armor": 10500,
+    "base_pen_chance": 0.33,
+    "pre_bonus_cap": 0.70,
+    "weapon": {
+      "name": "Update Spatha 40mm",
+      "damage_health": 510,
+      "damage_armor": 510,
+      "pen_mod": 1.0,
+      "reload_time": 4,
+      "fire_cooldown": 1.5,
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
+    }
+  },
+  "outlaw": {
+    "name": "Outlaw",
+    "base_health": 2950,
+    "base_armor": 11000,
+    "base_pen_chance": 0.33,
+    "pre_bonus_cap": 0.67,
+    "weapon": {
+      "name": "Outlaw gun",
+      "damage_health": 612,
+      "damage_armor": 612,
+      "pen_mod": 1.0,
+      "reload_time": 5,
+      "fire_cooldown": 2.0,
+      "ammo_capacity": 1,
+      "disable_chance": 0.2
+    }
+  },
+  "brigand": {
+    "name": "Brigand",
+    "base_health": 2950,
+    "base_armor": 11000,
+    "base_pen_chance": 0.33,
+    "pre_bonus_cap": 0.67,
+    "weapon": {
+      "name": "Brigand 30mm",
+      "damage_health": 340,
+      "damage_armor": 340,
+      "pen_mod": 1.0,
+      "reload_time": 2.5,
+      "fire_cooldown": 1.5,
+      "ammo_capacity": 3,
+      "disable_chance": 0.2
+    }
+  },
+  "silverhand": {
+    "name": "Silverhand",
+    "base_health": 3100,
+    "base_armor": 13300,
+    "base_pen_chance": 0.27,
+    "pre_bonus_cap": 0.67,
+    "weapons": [
+      {
+        "name": "Turret 40mm",
+        "damage_health": 510,
+        "damage_armor": 510,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.2
+      },
+      {
+        "name": "Casemate 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 5.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.15
+      }
+    ]
+  },
+  "update_svh": {
+    "name": "Update Silverhand",
+    "base_health": 3100,
+    "base_armor": 17000,
+    "base_pen_chance": 0.25,
+    "pre_bonus_cap": 0.67,
+    "weapons": [
+      {
+        "name": "Turret 40mm",
+        "damage_health": 510,
+        "damage_armor": 510,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.2
+      },
+      {
+        "name": "Casemate 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 4.5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.15
+      }
+    ]
+  }
+}
