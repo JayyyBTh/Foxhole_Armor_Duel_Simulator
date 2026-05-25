@@ -44,8 +44,9 @@ class Weapon:
     reload_time    : seconds to reload after burst is spent, then after every shot
     fire_cooldown  : seconds between shots within a burst (and before reload)
     ammo_capacity  : pre-loaded shells at fight start (first-stage size); default 1
-    disable_chance : P(this penetrating hit disables a defender weapon) in
-                     weapon-disable mode (ignored in HP mode)
+    disable_chance : DEFENSIVE stat. P(this weapon is disabled when its tank
+                     takes a penetrating hit and this weapon is the current
+                     last-to-first disable target). Ignored in HP mode.
     """
     name: str
     damage_health: int
@@ -188,9 +189,12 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                               disable_threshold * base_health (original behavior).
     mode = "weapon-disable" : a tank loses when EITHER its HP falls below
                               threshold OR all of its weapons are disabled.
-                              Every penetrating hit rolls the attacking weapon's
-                              disable_chance against the defender; on success the
-                              defender's highest-index live weapon is disabled.
+                              On every penetrating hit, the DEFENDER's
+                              highest-index live weapon rolls its own
+                              `disable_chance`; on success that weapon is
+                              disabled. Within one tick, sequential pens
+                              cascade — once weapon[n-d-1] falls, the next
+                              pen targets weapon[n-d-2].
 
     fires1 = tuple of tank1-weapon indices firing this tick (empty = none)
     fires2 = tuple of tank2-weapon indices firing this tick
@@ -350,8 +354,10 @@ def simulate_duel(tank1: Tank, tank2: Tank,
     # -----------------------------------------------------------------------
     n1 = len(tank1.weapons)
     n2 = len(tank2.weapons)
-    dc_t1_weapons = [w.disable_chance for w in tank1.weapons]  # rolls against tank2
-    dc_t2_weapons = [w.disable_chance for w in tank2.weapons]  # rolls against tank1
+    # Disable_chance is a DEFENDER-weapon property: tank X's own weapons each
+    # have a disable_chance that rolls when tank X takes a penetrating hit.
+    dc_t1_weapons = [w.disable_chance for w in tank1.weapons]
+    dc_t2_weapons = [w.disable_chance for w in tank2.weapons]
 
     initial_state_wd: Tuple[Tuple[int, ...], Tuple[int, ...], int, int] = (
         (0,) * n2,
@@ -416,17 +422,19 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                 new_active_wd[key] = new_active_wd.get(key, 0.0) + prob
                 continue
 
+            # Pen rolls use pre-shot armor (consistent with HP mode for simultaneous
+            # fire). Disable_chance is a DEFENDER-weapon property: on a penetrating
+            # hit, the defender's highest-index live weapon rolls its own
+            # disable_chance. Within a tick this cascades — if weapon[n-d-1] gets
+            # disabled, the next pen on that defender targets weapon[n-d-2].
             pen_probs: List[float] = []
-            disable_chances: List[float] = []
             for side, wi in firing:
                 if side == 1:
                     pen_probs.append(compute_pen_chance(
                         tank2, tank1.weapons[wi], af2(hits2), range_bonus))
-                    disable_chances.append(dc_t1_weapons[wi])
                 else:
                     pen_probs.append(compute_pen_chance(
                         tank1, tank2.weapons[wi], af1(hits1), range_bonus))
-                    disable_chances.append(dc_t2_weapons[wi])
 
             # Per firing weapon: 0=miss, 1=pen-no-disable, 2=pen-and-disable
             for outcome in product((0, 1, 2), repeat=len(firing)):
@@ -435,17 +443,29 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                 nh2 = list(hits2)
                 nd1 = d1_s
                 nd2 = d2_s
-                for (side, wi), pen, dc, o in zip(firing, pen_probs, disable_chances, outcome):
+                invalid_branch = False
+                for (side, wi), pen, o in zip(firing, pen_probs, outcome):
+                    # Defender's top-live-weapon disable_chance, recomputed per shot
+                    if side == 1:  # firing at tank2
+                        dc_now = dc_t2_weapons[n2 - nd2 - 1] if nd2 < n2 else 0.0
+                    else:          # firing at tank1
+                        dc_now = dc_t1_weapons[n1 - nd1 - 1] if nd1 < n1 else 0.0
+
                     if o == 0:
                         p_branch *= (1.0 - pen)
                     elif o == 1:
-                        p_branch *= pen * (1.0 - dc)
+                        p_branch *= pen * (1.0 - dc_now)
                         if side == 1:
                             nh2[wi] += 1
                         else:
                             nh1[wi] += 1
-                    else:  # o == 2
-                        p_branch *= pen * dc
+                    else:  # o == 2: pen-and-disable
+                        if dc_now <= 0.0:
+                            # Disable was impossible (no live weapons left or dc=0);
+                            # this outcome branch has prob 0, skip it.
+                            invalid_branch = True
+                            break
+                        p_branch *= pen * dc_now
                         if side == 1:
                             nh2[wi] += 1
                             nd2 = min(n2, nd2 + 1)
@@ -453,6 +473,8 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                             nh1[wi] += 1
                             nd1 = min(n1, nd1 + 1)
 
+                if invalid_branch:
+                    continue
                 if p_branch < prob_cutoff:
                     continue
 
