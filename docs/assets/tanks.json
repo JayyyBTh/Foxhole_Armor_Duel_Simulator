@@ -246,6 +246,23 @@
         "ammo_capacity": 1,
         "disable_chance": 0.25
       }
+    },
+    "talos": {
+      "name": "Talos",
+      "base_health": 4000,
+      "base_armor": 13550,
+      "base_pen_chance": 0.33,
+      "pre_bonus_cap": 0.67,
+      "weapon": {
+        "name": "Talos 75mm",
+        "damage_health": 1487,
+        "damage_armor": 1487,
+        "pen_mod": 1.5,
+        "reload_time": 6,
+        "fire_cooldown": 0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.25
+      }
     }
   }
 }
