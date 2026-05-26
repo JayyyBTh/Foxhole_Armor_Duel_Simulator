@@ -144,7 +144,7 @@
       }
     },
     "bt_warden": {
-      "name": "Lance BT",
+      "name": "Flood BT",
       "base_health": 5100,
       "base_armor": 15650,
       "base_pen_chance": 0.25,
