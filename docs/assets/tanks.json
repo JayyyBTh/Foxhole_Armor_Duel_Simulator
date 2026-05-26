@@ -229,6 +229,23 @@
         "ammo_capacity": 1,
         "disable_chance": 0.25
       }
+    },
+    "nemesis": {
+      "name": "Nemesis",
+      "base_health": 3650,
+      "base_armor": 10500,
+      "base_pen_chance": 0.33,
+      "pre_bonus_cap": 0.67,
+      "weapon": {
+        "name": "Nemesis 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 5,
+        "fire_cooldown": 2,
+        "ammo_capacity": 1,
+        "disable_chance": 0.25
+      }
     }
   }
 }
