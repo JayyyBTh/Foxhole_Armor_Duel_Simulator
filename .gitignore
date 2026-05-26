@@ -3,4 +3,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 
+# Local analysis output (regenerable via scripts/dump_full_matrix.py)
+output/
+
 
