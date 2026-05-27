@@ -47,6 +47,12 @@ class Weapon:
     disable_chance : DEFENSIVE stat. P(this weapon is disabled when its tank
                      takes a penetrating hit and this weapon is the current
                      last-to-first disable target). Ignored in HP mode.
+    disable_mod    : OFFENSIVE multiplier applied to the defender weapon's
+                     disable_chance on this weapon's penetrating hits
+                     (default 1.0). Affects only the disable roll — pen
+                     probability is unchanged (use pen_mod for that).
+                     Effective dc = clamp(defender.disable_chance *
+                     attacker.disable_mod, 0, 1). Ignored in HP mode.
     """
     name: str
     damage_health: int
@@ -56,6 +62,7 @@ class Weapon:
     fire_cooldown: float
     disable_chance: float
     ammo_capacity: int = 1
+    disable_mod: float = 1.0
 
 
 @dataclass
@@ -445,11 +452,16 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                 nd2 = d2_s
                 invalid_branch = False
                 for (side, wi), pen, o in zip(firing, pen_probs, outcome):
-                    # Defender's top-live-weapon disable_chance, recomputed per shot
+                    # Defender's top-live-weapon disable_chance, scaled by the
+                    # attacker weapon's disable_mod and clamped. Recomputed per
+                    # shot because the cascade can advance mid-tick.
                     if side == 1:  # firing at tank2
-                        dc_now = dc_t2_weapons[n2 - nd2 - 1] if nd2 < n2 else 0.0
+                        dc_def = dc_t2_weapons[n2 - nd2 - 1] if nd2 < n2 else 0.0
+                        dc_mod = tank1.weapons[wi].disable_mod
                     else:          # firing at tank1
-                        dc_now = dc_t1_weapons[n1 - nd1 - 1] if nd1 < n1 else 0.0
+                        dc_def = dc_t1_weapons[n1 - nd1 - 1] if nd1 < n1 else 0.0
+                        dc_mod = tank2.weapons[wi].disable_mod
+                    dc_now = max(0.0, min(1.0, dc_def * dc_mod))
 
                     if o == 0:
                         p_branch *= (1.0 - pen)
@@ -639,6 +651,7 @@ def _make_weapon(w: dict) -> Weapon:
         fire_cooldown=w["fire_cooldown"],
         disable_chance=w["disable_chance"],
         ammo_capacity=w.get("ammo_capacity", 1),
+        disable_mod=w.get("disable_mod", 1.0),
     )
 
 

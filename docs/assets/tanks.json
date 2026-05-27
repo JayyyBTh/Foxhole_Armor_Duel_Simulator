@@ -159,8 +159,26 @@
         "ammo_capacity": 1,
         "disable_chance": 0.20
       }
+    },
+    "std": {
+    "name": "Lordscar (STD)",
+    "base_health": 3100,
+    "base_armor": 10500,
+    "base_pen_chance": 0.30,
+    "pre_bonus_cap": 0.67,
+    "weapon": {
+    "name": "STD 94.5mm",
+      "damage_health": 1200,
+      "damage_armor": 1200,
+      "pen_mod": 2.0,
+      "reload_time": 6.0,
+      "fire_cooldown": 0.0,
+      "ammo_capacity": 1,
+      "disable_chance": 0.20,
+      "disable_mod": 1.5
+      }
     }
-  },
+  },  
   "colonial": {
     "bardiche": {
       "name": "Bardiche",
@@ -296,6 +314,24 @@
         "fire_cooldown": 0,
         "ammo_capacity": 1,
         "disable_chance": 0.25
+      }
+    },
+    "btd": {
+    "name": "Hasta (BTD)",
+    "base_health": 6250,
+    "base_armor": 15650,
+    "base_pen_chance": 0.20,
+    "pre_bonus_cap": 0.50,
+    "weapon": {
+      "name": "BTD 94.5mm",
+      "damage_health": 1750,
+      "damage_armor": 1750,
+      "pen_mod": 2.0,
+      "reload_time": 6.0,
+      "fire_cooldown": 0.0,
+      "ammo_capacity": 1,
+      "disable_chance": 0.25,
+      "disable_mod": 1.5
       }
     } 
   }
