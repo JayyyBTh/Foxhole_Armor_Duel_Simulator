@@ -60,6 +60,10 @@ class Weapon:
                      both damage_armor and damage_health on penetration; it
                      does NOT affect pen probability or the disable roll.
                      damage_health/damage_armor are RAW values (pre-multiplier).
+    reload_mode    : firing schedule semantics — "per_shot" (default) reloads
+                     between every shot after the first burst; "per_magazine"
+                     fires all `ammo_capacity` shots quickly, then reloads the
+                     whole magazine at once. Irrelevant when ammo_capacity=1.
     """
     name: str
     damage_health: int
@@ -71,6 +75,7 @@ class Weapon:
     ammo_capacity: int = 1
     disable_mod: float = 1.0
     damage_type: str = "ap"
+    reload_mode: str = "per_shot"
 
 
 @dataclass
@@ -148,7 +153,28 @@ def compute_pen_chance(defending_tank: Tank, attacking_weapon: Weapon,
 
 
 def shot_time(shot_n: int, weapon: Weapon) -> float:
-    """t(n) = (n-1)*fire_cooldown + max(0, n-ammo_capacity)*reload_time"""
+    """Time at which shot n fires.
+
+    per_shot (default):
+        t(n) = (n-1)*fire_cooldown + max(0, n-ammo_capacity)*reload_time
+        Each shot beyond the initial burst incurs its own reload_time.
+
+    per_magazine:
+        Empty the whole magazine, then one reload swaps it. Every shot
+        (including the magazine's last) still incurs fire_cooldown before
+        anything else can happen, so the reload only begins fc seconds after
+        the last shot of the magazine.
+        mag_idx     = (n-1) // ammo_capacity
+        shot_in_mag = (n-1) %  ammo_capacity
+        t(n) = mag_idx * (ammo_capacity*fire_cooldown + reload_time)
+               + shot_in_mag * fire_cooldown
+    """
+    if weapon.reload_mode == "per_magazine":
+        cap = weapon.ammo_capacity
+        mag_idx = (shot_n - 1) // cap
+        shot_in_mag = (shot_n - 1) % cap
+        return (mag_idx * (cap * weapon.fire_cooldown + weapon.reload_time)
+                + shot_in_mag * weapon.fire_cooldown)
     return ((shot_n - 1) * weapon.fire_cooldown
             + max(0, shot_n - weapon.ammo_capacity) * weapon.reload_time)
 
@@ -692,6 +718,7 @@ def _make_weapon(w: dict) -> Weapon:
         ammo_capacity=w.get("ammo_capacity", 1),
         disable_mod=w.get("disable_mod", 1.0),
         damage_type=w.get("damage_type", "ap"),
+        reload_mode=w.get("reload_mode", "per_shot"),
     )
 
 
