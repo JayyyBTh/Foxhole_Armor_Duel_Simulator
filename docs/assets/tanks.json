@@ -1,6 +1,6 @@
 {
   "warden": {
-    "outlaw": {
+    "MediumTank2RangeW": {
       "name": "Outlaw",
       "base_health": 2950,
       "base_armor": 11000,
@@ -17,7 +17,7 @@
         "disable_chance": 0.2
       }
     },
-    "svh": {
+    "MediumTankW": {
       "name": "Silverhand",
       "base_health": 3100,
       "base_armor": 17000,
@@ -46,7 +46,7 @@
         }
       ]
     },
-    "brigand": {
+    "MediumTank2W": {
       "name": "Brigand",
       "base_health": 2950,
       "base_armor": 11000,
@@ -63,7 +63,7 @@
         "disable_chance": 0.2
       }
     },
-    "htd": {
+    "DestroyerTankW": {
       "name": "HTD",
       "base_health": 2200,
       "base_armor": 17650,
@@ -80,7 +80,7 @@
         "disable_chance": 0.2
       }
     },
-    "thornfall": {
+    "MediumTank2IndirectW": {
       "name": "Thornfall",
       "base_health": 2650,
       "base_armor": 11000,
@@ -97,7 +97,7 @@
         "disable_chance": 0.35
       }
     },
-    "bt_warden": {
+    "BattleTankW": {
       "name": "Flood BT",
       "base_health": 5100,
       "base_armor": 15650,
@@ -114,11 +114,11 @@
         "disable_chance": 0.20
       }
     },
-    "std": {
+    "MediumTankATW": {
     "name": "Lordscar (STD)",
     "base_health": 3100,
-    "base_armor": 10500,
-    "base_pen_chance": 0.30,
+    "base_armor": 14500,
+    "base_pen_chance": 0.28,
     "pre_bonus_cap": 0.67,
     "weapon": {
     "name": "STD 94.5mm",
@@ -134,7 +134,7 @@
     }
   },  
   "colonial": {
-    "bardiche": {
+    "MediumTank2C": {
       "name": "Bardiche",
       "base_health": 4000,
       "base_armor": 15650,
@@ -151,7 +151,7 @@
         "disable_chance": 0.15
       }
     },
-    "spatha": {
+    "MediumTankOffensiveC": {
       "name": "Spatha",
       "base_health": 3650,
       "base_armor": 10500,
@@ -168,7 +168,7 @@
         "disable_chance": 0.2
       }
     },
-    "falchion": {
+    "MediumTankC": {
       "name": "Falchion",
       "base_health": 3650,
       "base_armor": 12725,
@@ -185,7 +185,7 @@
         "disable_chance": 0.25
       }
     },
-    "nemesis": {
+    "MediumTank3C": {
       "name": "Nemesis",
       "base_health": 3650,
       "base_armor": 10500,
@@ -202,7 +202,7 @@
         "disable_chance": 0.25
       }
     },
-    "talos": {
+    "MediumTankLargeC": {
       "name": "Talos",
       "base_health": 4000,
       "base_armor": 13550,
@@ -219,7 +219,7 @@
         "disable_chance": 0.25
       }
     },
-    "bt_collie": {
+    "BattleTankC": {
       "name": "Lance BT",
       "base_health": 6250,
       "base_armor": 15650,
@@ -236,7 +236,7 @@
         "disable_chance": 0.25
       }
     },
-    "btd": {
+    "BattleTankATC": {
     "name": "Hasta (BTD)",
     "base_health": 6250,
     "base_armor": 15650,
