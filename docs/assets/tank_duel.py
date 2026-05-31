@@ -60,6 +60,10 @@ class Weapon:
                      both damage_armor and damage_health on penetration; it
                      does NOT affect pen probability or the disable roll.
                      damage_health/damage_armor are RAW values (pre-multiplier).
+    reload_mode    : firing schedule semantics — "per_shot" (default) reloads
+                     between every shot after the first burst; "per_magazine"
+                     fires all `ammo_capacity` shots quickly, then reloads the
+                     whole magazine at once. Irrelevant when ammo_capacity=1.
     """
     name: str
     damage_health: int
@@ -71,6 +75,7 @@ class Weapon:
     ammo_capacity: int = 1
     disable_mod: float = 1.0
     damage_type: str = "ap"
+    reload_mode: str = "per_shot"
 
 
 @dataclass
@@ -148,7 +153,28 @@ def compute_pen_chance(defending_tank: Tank, attacking_weapon: Weapon,
 
 
 def shot_time(shot_n: int, weapon: Weapon) -> float:
-    """t(n) = (n-1)*fire_cooldown + max(0, n-ammo_capacity)*reload_time"""
+    """Time at which shot n fires.
+
+    per_shot (default):
+        t(n) = (n-1)*fire_cooldown + max(0, n-ammo_capacity)*reload_time
+        Each shot beyond the initial burst incurs its own reload_time.
+
+    per_magazine:
+        Empty the whole magazine, then one reload swaps it. Every shot
+        (including the magazine's last) still incurs fire_cooldown before
+        anything else can happen, so the reload only begins fc seconds after
+        the last shot of the magazine.
+        mag_idx     = (n-1) // ammo_capacity
+        shot_in_mag = (n-1) %  ammo_capacity
+        t(n) = mag_idx * (ammo_capacity*fire_cooldown + reload_time)
+               + shot_in_mag * fire_cooldown
+    """
+    if weapon.reload_mode == "per_magazine":
+        cap = weapon.ammo_capacity
+        mag_idx = (shot_n - 1) // cap
+        shot_in_mag = (shot_n - 1) % cap
+        return (mag_idx * (cap * weapon.fire_cooldown + weapon.reload_time)
+                + shot_in_mag * weapon.fire_cooldown)
     return ((shot_n - 1) * weapon.fire_cooldown
             + max(0, shot_n - weapon.ammo_capacity) * weapon.reload_time)
 
@@ -673,6 +699,16 @@ def print_shot_log(tank1: Tank, tank2: Tank, result: dict, n: int = 15) -> None:
 # ---------------------------------------------------------------------------
 
 DEFAULT_TANKS_FILE = Path(__file__).with_name("tanks.json")
+DEFAULT_EARLYWAR_FILE = Path(__file__).with_name("earlywar.json")
+
+
+def default_library_files() -> List[Path]:
+    """Default library file list: tanks.json plus earlywar.json if it exists.
+    Used by the CLI and any other entry point that wants the "everything" view."""
+    files = [DEFAULT_TANKS_FILE]
+    if DEFAULT_EARLYWAR_FILE.exists():
+        files.append(DEFAULT_EARLYWAR_FILE)
+    return files
 
 
 def _make_weapon(w: dict) -> Weapon:
@@ -692,6 +728,7 @@ def _make_weapon(w: dict) -> Weapon:
         ammo_capacity=w.get("ammo_capacity", 1),
         disable_mod=w.get("disable_mod", 1.0),
         damage_type=w.get("damage_type", "ap"),
+        reload_mode=w.get("reload_mode", "per_shot"),
     )
 
 
@@ -760,6 +797,43 @@ def load_factions(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, str]:
         data = json.load(f)
     _flat, factions = _flatten_factions(data)
     return factions
+
+
+def load_libraries(paths: List[Path]) -> Dict[str, Tank]:
+    """Load and merge multiple tank library files into one dict.
+
+    Errors loudly on duplicate keys across files so misnamed entries surface
+    immediately. Used to support cross-file duels (e.g. early-war vs main).
+    """
+    merged: Dict[str, Tank] = {}
+    sources: Dict[str, Path] = {}
+    for p in paths:
+        for key, tank in load_tanks(p).items():
+            if key in merged:
+                raise ValueError(
+                    f"tank key '{key}' defined in multiple libraries: "
+                    f"{sources[key]} and {p}"
+                )
+            merged[key] = tank
+            sources[key] = p
+    return merged
+
+
+def load_libraries_with_source(paths: List[Path]) -> Tuple[Dict[str, Tank], Dict[str, Path]]:
+    """Same as load_libraries but also returns {tank_key: source_path}.
+    The website needs this to scope matrix views to one library file."""
+    merged: Dict[str, Tank] = {}
+    sources: Dict[str, Path] = {}
+    for p in paths:
+        for key, tank in load_tanks(p).items():
+            if key in merged:
+                raise ValueError(
+                    f"tank key '{key}' defined in multiple libraries: "
+                    f"{sources[key]} and {p}"
+                )
+            merged[key] = tank
+            sources[key] = p
+    return merged, sources
 
 
 # ---------------------------------------------------------------------------
@@ -836,7 +910,8 @@ def run_test_suite() -> int:
 # ---------------------------------------------------------------------------
 
 def main(argv: Optional[List[str]] = None) -> int:
-    library = load_tanks()
+    default_files = default_library_files()
+    library = load_libraries(default_files)
     tank_keys = sorted(library.keys())
 
     parser = argparse.ArgumentParser(
@@ -852,8 +927,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("range_m", type=float, nargs="?",
                         help="engagement range in metres")
     parser.add_argument("--shots", type=int, default=15, help="shot-log length (default 15)")
-    parser.add_argument("--tanks-file", type=Path, default=DEFAULT_TANKS_FILE,
-                        help=f"path to tanks JSON (default {DEFAULT_TANKS_FILE.name})")
+    parser.add_argument("--tanks-file", type=Path, nargs="+", default=None,
+                        help=f"one or more tank library JSON files (default: "
+                             f"{DEFAULT_TANKS_FILE.name} plus "
+                             f"{DEFAULT_EARLYWAR_FILE.name} if it exists)")
     parser.add_argument("--mode", choices=("hp", "weapon-disable"), default="hp",
                         help="win condition: 'hp' (default) or 'weapon-disable' "
                              "(losing all weapons also disables the tank)")
@@ -877,8 +954,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error(f"missing required arguments: {', '.join(missing)} "
                      f"(use --tests to run the sanity-check suite instead)")
 
-    if args.tanks_file != DEFAULT_TANKS_FILE:
-        library = load_tanks(args.tanks_file)
+    if args.tanks_file is not None:
+        library = load_libraries(args.tanks_file)
 
     for key in (args.tank1, args.tank2):
         if key not in library:

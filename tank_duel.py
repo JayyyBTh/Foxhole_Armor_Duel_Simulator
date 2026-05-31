@@ -699,6 +699,16 @@ def print_shot_log(tank1: Tank, tank2: Tank, result: dict, n: int = 15) -> None:
 # ---------------------------------------------------------------------------
 
 DEFAULT_TANKS_FILE = Path(__file__).with_name("tanks.json")
+DEFAULT_EARLYWAR_FILE = Path(__file__).with_name("earlywar.json")
+
+
+def default_library_files() -> List[Path]:
+    """Default library file list: tanks.json plus earlywar.json if it exists.
+    Used by the CLI and any other entry point that wants the "everything" view."""
+    files = [DEFAULT_TANKS_FILE]
+    if DEFAULT_EARLYWAR_FILE.exists():
+        files.append(DEFAULT_EARLYWAR_FILE)
+    return files
 
 
 def _make_weapon(w: dict) -> Weapon:
@@ -789,6 +799,43 @@ def load_factions(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, str]:
     return factions
 
 
+def load_libraries(paths: List[Path]) -> Dict[str, Tank]:
+    """Load and merge multiple tank library files into one dict.
+
+    Errors loudly on duplicate keys across files so misnamed entries surface
+    immediately. Used to support cross-file duels (e.g. early-war vs main).
+    """
+    merged: Dict[str, Tank] = {}
+    sources: Dict[str, Path] = {}
+    for p in paths:
+        for key, tank in load_tanks(p).items():
+            if key in merged:
+                raise ValueError(
+                    f"tank key '{key}' defined in multiple libraries: "
+                    f"{sources[key]} and {p}"
+                )
+            merged[key] = tank
+            sources[key] = p
+    return merged
+
+
+def load_libraries_with_source(paths: List[Path]) -> Tuple[Dict[str, Tank], Dict[str, Path]]:
+    """Same as load_libraries but also returns {tank_key: source_path}.
+    The website needs this to scope matrix views to one library file."""
+    merged: Dict[str, Tank] = {}
+    sources: Dict[str, Path] = {}
+    for p in paths:
+        for key, tank in load_tanks(p).items():
+            if key in merged:
+                raise ValueError(
+                    f"tank key '{key}' defined in multiple libraries: "
+                    f"{sources[key]} and {p}"
+                )
+            merged[key] = tank
+            sources[key] = p
+    return merged, sources
+
+
 # ---------------------------------------------------------------------------
 # Sanity-check test suite
 # ---------------------------------------------------------------------------
@@ -863,7 +910,8 @@ def run_test_suite() -> int:
 # ---------------------------------------------------------------------------
 
 def main(argv: Optional[List[str]] = None) -> int:
-    library = load_tanks()
+    default_files = default_library_files()
+    library = load_libraries(default_files)
     tank_keys = sorted(library.keys())
 
     parser = argparse.ArgumentParser(
@@ -879,8 +927,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("range_m", type=float, nargs="?",
                         help="engagement range in metres")
     parser.add_argument("--shots", type=int, default=15, help="shot-log length (default 15)")
-    parser.add_argument("--tanks-file", type=Path, default=DEFAULT_TANKS_FILE,
-                        help=f"path to tanks JSON (default {DEFAULT_TANKS_FILE.name})")
+    parser.add_argument("--tanks-file", type=Path, nargs="+", default=None,
+                        help=f"one or more tank library JSON files (default: "
+                             f"{DEFAULT_TANKS_FILE.name} plus "
+                             f"{DEFAULT_EARLYWAR_FILE.name} if it exists)")
     parser.add_argument("--mode", choices=("hp", "weapon-disable"), default="hp",
                         help="win condition: 'hp' (default) or 'weapon-disable' "
                              "(losing all weapons also disables the tank)")
@@ -904,8 +954,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error(f"missing required arguments: {', '.join(missing)} "
                      f"(use --tests to run the sanity-check suite instead)")
 
-    if args.tanks_file != DEFAULT_TANKS_FILE:
-        library = load_tanks(args.tanks_file)
+    if args.tanks_file is not None:
+        library = load_libraries(args.tanks_file)
 
     for key in (args.tank1, args.tank2):
         if key not in library:

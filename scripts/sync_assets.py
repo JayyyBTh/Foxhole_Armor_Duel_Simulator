@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "docs" / "assets"
-SOURCES = ["tank_duel.py", "tanks.json"]
+SOURCES = ["tank_duel.py", "tanks.json", "earlywar.json"]
 
 
 def main() -> int:

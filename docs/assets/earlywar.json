@@ -1,0 +1,64 @@
+{
+  "warden": {
+    "ArmoredCar2LargeW": {
+      "name": "Freeman (HAC)",
+      "armor_class": "light",
+      "base_health": 1500,
+      "base_armor": 2100,
+      "base_pen_chance": 0.75,
+      "pre_bonus_cap": 0.95,
+      "weapon": {
+        "name": "HAC 40mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.0,
+        "reload_time": 5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "explosive"
+      }
+    }
+  },  
+  "colonial": {
+    "ArmoredCarTwinC": {
+      "name": "Gemini",
+      "armor_class": "light",
+      "base_health": 1250,
+      "base_armor": 2350,
+      "base_pen_chance": 0.85,
+      "pre_bonus_cap": 0.95,
+      "weapon": {
+        "name": "Gemini RPG",
+        "damage_health": 524,
+        "damage_armor": 524,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 1.5,
+        "ammo_capacity": 2,
+        "disable_chance": 0.0,
+        "damage_type": "explosive"
+      }
+    },
+    "ArmoredCarOffensiveC": {
+      "name": "Percutio (ATAC)",
+      "armor_class": "light",
+      "base_health": 1250,
+      "base_armor": 2100,
+      "base_pen_chance": 0.85,
+      "pre_bonus_cap": 0.95,
+      "weapon": {
+        "name": "ATAC 14.5mm",
+        "damage_health": 187.5,
+        "damage_armor": 375,
+        "pen_mod": 1.0,
+        "reload_time": 4,
+        "fire_cooldown": 1,
+        "ammo_capacity": 10,
+        "disable_chance": 0.0,
+        "damage_type": "at_kinetic",
+        "reload_mode": "per_magazine"
+      }
+    }
+  }
+}
