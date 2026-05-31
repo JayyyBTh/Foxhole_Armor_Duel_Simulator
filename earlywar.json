@@ -51,7 +51,7 @@
         "name": "ATAC 14.5mm",
         "damage_health": 187.5,
         "damage_armor": 375,
-        "pen_mod": 1.0,
+        "pen_mod": 100,
         "reload_time": 4,
         "fire_cooldown": 1,
         "ammo_capacity": 10,
