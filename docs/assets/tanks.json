@@ -7,14 +7,15 @@
       "base_pen_chance": 0.33,
       "pre_bonus_cap": 0.67,
       "weapon": {
-        "name": "Outlaw gun",
-        "damage_health": 612,
-        "damage_armor": 612,
+        "name": "Outlaw 40mm",
+        "damage_health": 720,
+        "damage_armor": 720,
         "pen_mod": 1.0,
         "reload_time": 5,
         "fire_cooldown": 2.0,
         "ammo_capacity": 1,
-        "disable_chance": 0.2
+        "disable_chance": 0.2,
+        "damage_type": "explosive"
       }
     },
     "MediumTankW": {
@@ -26,13 +27,14 @@
       "weapons": [
         {
           "name": "Turret 40mm",
-          "damage_health": 510,
-          "damage_armor": 510,
+          "damage_health": 600,
+          "damage_armor": 600,
           "pen_mod": 1.0,
           "reload_time": 5.5,
           "fire_cooldown": 2.0,
           "ammo_capacity": 1,
-          "disable_chance": 0.2
+          "disable_chance": 0.2,
+          "damage_type": "explosive"
         },
         {
           "name": "Casemate 68mm",
@@ -42,7 +44,8 @@
           "reload_time": 4.5,
           "fire_cooldown": 2.0,
           "ammo_capacity": 1,
-          "disable_chance": 0.15
+          "disable_chance": 0.15,
+          "damage_type": "ap"
         }
       ]
     },
@@ -54,13 +57,14 @@
       "pre_bonus_cap": 0.67,
       "weapon": {
         "name": "Brigand 30mm",
-        "damage_health": 340,
-        "damage_armor": 340,
+        "damage_health": 400,
+        "damage_armor": 400,
         "pen_mod": 1.0,
         "reload_time": 2.5,
         "fire_cooldown": 1.5,
         "ammo_capacity": 3,
-        "disable_chance": 0.2
+        "disable_chance": 0.2,
+        "damage_type": "explosive"
       }
     },
     "DestroyerTankW": {
@@ -70,14 +74,15 @@
       "base_pen_chance": 0.22,
       "pre_bonus_cap": 0.50,
       "weapon": {
-        "name": "HTD gun",
+        "name": "HTD 68mm",
         "damage_health": 1050,
         "damage_armor": 1050,
         "pen_mod": 1.5,
         "reload_time": 4.5,
         "fire_cooldown": 2.0,
         "ammo_capacity": 1,
-        "disable_chance": 0.2
+        "disable_chance": 0.2,
+        "damage_type": "ap"
       }
     },
     "MediumTank2IndirectW": {
@@ -94,7 +99,8 @@
         "reload_time": 5.5,
         "fire_cooldown": 0.8,
         "ammo_capacity": 8,
-        "disable_chance": 0.35
+        "disable_chance": 0.35,
+        "damage_type": "ap"
       }
     },
     "BattleTankW": {
@@ -105,13 +111,14 @@
       "pre_bonus_cap": 0.50,
       "weapon": {
         "name": "BT 75mm",
-        "damage_health": 1487,
-        "damage_armor": 1487,
+        "damage_health": 1750,
+        "damage_armor": 1750,
         "pen_mod": 1.5,
         "reload_time": 6,
         "fire_cooldown": 0,
         "ammo_capacity": 1,
-        "disable_chance": 0.20
+        "disable_chance": 0.20,
+        "damage_type": "explosive"
       }
     },
     "MediumTankATW": {
@@ -129,7 +136,8 @@
       "fire_cooldown": 0.0,
       "ammo_capacity": 1,
       "disable_chance": 0.20,
-      "disable_mod": 1.5
+      "disable_mod": 1.5,
+      "damage_type": "ap"
       }
     }
   },  
@@ -148,7 +156,8 @@
         "reload_time": 4.5,
         "fire_cooldown": 0.8,
         "ammo_capacity": 3,
-        "disable_chance": 0.15
+        "disable_chance": 0.15,
+        "damage_type": "ap"
       }
     },
     "MediumTankOffensiveC": {
@@ -159,13 +168,14 @@
       "pre_bonus_cap": 0.70,
       "weapon": {
         "name": "Spatha 40mm",
-        "damage_health": 510,
-        "damage_armor": 510,
+        "damage_health": 600,
+        "damage_armor": 600,
         "pen_mod": 1.0,
         "reload_time": 4,
         "fire_cooldown": 1.5,
         "ammo_capacity": 1,
-        "disable_chance": 0.2
+        "disable_chance": 0.2,
+        "damage_type": "explosive"
       }
     },
     "MediumTankC": {
@@ -176,13 +186,14 @@
       "pre_bonus_cap": 0.67,
       "weapon": {
         "name": "Falchion 40mm",
-        "damage_health": 510,
-        "damage_armor": 510,
+        "damage_health": 600,
+        "damage_armor": 600,
         "pen_mod": 1.0,
         "reload_time": 5.5,
         "fire_cooldown": 2,
         "ammo_capacity": 1,
-        "disable_chance": 0.25
+        "disable_chance": 0.25,
+        "damage_type": "explosive"
       }
     },
     "MediumTank3C": {
@@ -199,7 +210,8 @@
         "reload_time": 5,
         "fire_cooldown": 2,
         "ammo_capacity": 1,
-        "disable_chance": 0.25
+        "disable_chance": 0.25,
+        "damage_type": "ap"
       }
     },
     "MediumTankLargeC": {
@@ -210,13 +222,14 @@
       "pre_bonus_cap": 0.67,
       "weapon": {
         "name": "Talos 75mm",
-        "damage_health": 1487,
-        "damage_armor": 1487,
+        "damage_health": 1750,
+        "damage_armor": 1750,
         "pen_mod": 1.5,
         "reload_time": 6,
         "fire_cooldown": 0,
         "ammo_capacity": 1,
-        "disable_chance": 0.25
+        "disable_chance": 0.25,
+        "damage_type": "explosive"
       }
     },
     "BattleTankC": {
@@ -227,13 +240,14 @@
       "pre_bonus_cap": 0.50,
       "weapon": {
         "name": "BT 75mm",
-        "damage_health": 1487,
-        "damage_armor": 1487,
+        "damage_health": 1750,
+        "damage_armor": 1750,
         "pen_mod": 1.5,
         "reload_time": 6,
         "fire_cooldown": 0,
         "ammo_capacity": 1,
-        "disable_chance": 0.25
+        "disable_chance": 0.25,
+        "damage_type": "explosive"
       }
     },
     "BattleTankATC": {
@@ -251,7 +265,8 @@
       "fire_cooldown": 0.0,
       "ammo_capacity": 1,
       "disable_chance": 0.25,
-      "disable_mod": 1.5
+      "disable_mod": 1.5,
+      "damage_type": "ap"
       }
     } 
   }

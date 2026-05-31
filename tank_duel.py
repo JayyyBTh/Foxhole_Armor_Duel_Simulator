@@ -53,6 +53,13 @@ class Weapon:
                      probability is unchanged (use pen_mod for that).
                      Effective dc = clamp(defender.disable_chance *
                      attacker.disable_mod, 0, 1). Ignored in HP mode.
+    damage_type    : shell type for armor-class damage scaling. Looked up in
+                     _GAME_DAMAGE_PCT — known values: "ap", "explosive",
+                     "at_kinetic". Default "ap" (the no-op type: 1.0 against
+                     both armor classes). The looked-up percentage scales
+                     both damage_armor and damage_health on penetration; it
+                     does NOT affect pen probability or the disable roll.
+                     damage_health/damage_armor are RAW values (pre-multiplier).
     """
     name: str
     damage_health: int
@@ -63,6 +70,7 @@ class Weapon:
     disable_chance: float
     ammo_capacity: int = 1
     disable_mod: float = 1.0
+    damage_type: str = "ap"
 
 
 @dataclass
@@ -74,6 +82,9 @@ class Tank:
     base_pen_chance : P0 - minimum pen chance at full armor (lower = harder tank)
     pre_bonus_cap   : S0 - ceiling on pre-bonus pen value (lower = harder tank)
     weapons         : list of Weapons; each fires on its own schedule
+    armor_class     : "heavy" (default) or "light". Selects which column of
+                      _GAME_DAMAGE_PCT scales incoming damage. Does not
+                      affect pen probability.
     """
     name: str
     base_health: int
@@ -81,11 +92,31 @@ class Tank:
     base_pen_chance: float
     pre_bonus_cap: float
     weapons: List[Weapon]
+    armor_class: str = "heavy"
 
 
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
+
+# Game-published damage percentage by (damage_type, armor_class).
+# Applied to raw damage_armor and damage_health on a penetrating hit; does NOT
+# affect pen probability or the disable roll. Missing entries fall back to 1.0
+# (no scaling) — keep this table the single source of truth and add new entries
+# rather than scattering multipliers elsewhere.
+_GAME_DAMAGE_PCT: Dict[Tuple[str, str], float] = {
+    ("ap",         "light"): 1.00, ("ap",         "heavy"): 1.00,
+    ("explosive",  "light"): 0.85, ("explosive",  "heavy"): 0.85,
+    ("at_kinetic", "light"): 0.65, ("at_kinetic", "heavy"): 0.15,
+}
+
+
+def damage_multiplier(damage_type: str, armor_class: str) -> float:
+    """Game-published damage percentage for (damage_type, armor_class).
+    Falls back to 1.0 for unknown combinations so untagged weapons or new
+    armor classes behave as no-ops until the table is extended."""
+    return _GAME_DAMAGE_PCT.get((damage_type, armor_class), 1.0)
+
 
 def range_to_bonus(range_m: float) -> float:
     """Convert range in metres to flat penetration bonus."""
@@ -213,11 +244,19 @@ def simulate_duel(tank1: Tank, tank2: Tank,
         raise ValueError(f"unknown mode '{mode}'; expected 'hp' or 'weapon-disable'")
     range_bonus = range_to_bonus(range_m)
 
-    # Per-hit losses indexed by attacker-weapon index
-    armor_loss_on_t1 = [w.damage_armor * velocity_mod / tank1.base_armor for w in tank2.weapons]
-    armor_loss_on_t2 = [w.damage_armor * velocity_mod / tank2.base_armor for w in tank1.weapons]
-    health_loss_on_t1 = [w.damage_health * velocity_mod for w in tank2.weapons]
-    health_loss_on_t2 = [w.damage_health * velocity_mod for w in tank1.weapons]
+    # Per-hit losses indexed by attacker-weapon index. damage_type × armor_class
+    # multiplier scales raw weapon damage to the effective damage actually
+    # dealt to this defender.
+    mult_on_t1 = [damage_multiplier(w.damage_type, tank1.armor_class) for w in tank2.weapons]
+    mult_on_t2 = [damage_multiplier(w.damage_type, tank2.armor_class) for w in tank1.weapons]
+    armor_loss_on_t1 = [w.damage_armor * velocity_mod * mult_on_t1[i] / tank1.base_armor
+                        for i, w in enumerate(tank2.weapons)]
+    armor_loss_on_t2 = [w.damage_armor * velocity_mod * mult_on_t2[i] / tank2.base_armor
+                        for i, w in enumerate(tank1.weapons)]
+    health_loss_on_t1 = [w.damage_health * velocity_mod * mult_on_t1[i]
+                         for i, w in enumerate(tank2.weapons)]
+    health_loss_on_t2 = [w.damage_health * velocity_mod * mult_on_t2[i]
+                         for i, w in enumerate(tank1.weapons)]
 
     disable_hp1 = tank1.base_health * disable_threshold
     disable_hp2 = tank2.base_health * disable_threshold
@@ -652,6 +691,7 @@ def _make_weapon(w: dict) -> Weapon:
         disable_chance=w["disable_chance"],
         ammo_capacity=w.get("ammo_capacity", 1),
         disable_mod=w.get("disable_mod", 1.0),
+        damage_type=w.get("damage_type", "ap"),
     )
 
 
@@ -708,6 +748,7 @@ def load_tanks(path: Path = DEFAULT_TANKS_FILE) -> Dict[str, Tank]:
             base_pen_chance=entry["base_pen_chance"],
             pre_bonus_cap=entry["pre_bonus_cap"],
             weapons=weapons,
+            armor_class=entry.get("armor_class", "heavy"),
         )
     return tanks
 
