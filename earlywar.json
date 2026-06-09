@@ -18,6 +18,44 @@
         "disable_chance": 0.0,
         "damage_type": "explosive"
       }
+    },
+    "HalfTrackOffensiveW": {
+      "name": "Blinder (ATHT)",
+      "armor_class": "light",
+      "base_health": 1500,
+      "base_armor": 4600,
+      "base_pen_chance": 0.65,
+      "pre_bonus_cap": 0.90,
+      "weapon": {
+        "name": "ATHT 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 4,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "ap"
+      }
+    },
+    "LightTankW": {
+      "name": "Devitt",
+      "armor_class": "heavy",
+      "base_health": 1950,
+      "base_armor": 10000,
+      "base_pen_chance": 0.30,
+      "pre_bonus_cap": 0.67,
+      "weapon": {
+        "name": "Devitt 40mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.0,
+        "reload_time": 5.0,
+        "fire_cooldown": 2,
+        "ammo_capacity": 1,
+        "disable_chance": 0.20,
+        "damage_type": "explosive"
+      }
     }
   },  
   "colonial": {
@@ -58,6 +96,63 @@
         "disable_chance": 0.0,
         "damage_type": "at_kinetic",
         "reload_mode": "per_magazine"
+      }
+    },
+    "LightTankOffensiveC": {
+      "name": "Pelekys (LTD)",
+      "armor_class": "heavy",
+      "base_health": 1750,
+      "base_armor": 7250,
+      "base_pen_chance": 0.35,
+      "pre_bonus_cap": 0.67,
+      "weapon": {
+        "name": "LTD 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 4.5,
+        "fire_cooldown": 2,
+        "ammo_capacity": 1,
+        "disable_chance": 0.25,
+        "damage_type": "ap"
+      }
+    },
+    "LightTankC": {
+      "name": "Hatchet",
+      "armor_class": "heavy",
+      "base_health": 1950,
+      "base_armor": 9100,
+      "base_pen_chance": 0.33,
+      "pre_bonus_cap": 0.67,
+      "weapon": {
+        "name": "Hatchet 40mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 2,
+        "ammo_capacity": 1,
+        "disable_chance": 0.25,
+        "damage_type": "explosive"
+      }
+    },
+    "LightTankMobilityC": {
+      "name": "Kranesca",
+      "armor_class": "heavy",
+      "base_health": 2250,
+      "base_armor": 9100,
+      "base_pen_chance": 0.33,
+      "pre_bonus_cap": 0.67,
+      "weapon": {
+        "name": "Kranesca 40mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.0,
+        "reload_time": 5.5,
+        "fire_cooldown": 2,
+        "ammo_capacity": 1,
+        "disable_chance": 0.25,
+        "damage_type": "explosive"
       }
     }
   }
