@@ -244,21 +244,28 @@ def simulate_duel(tank1: Tank, tank2: Tank,
                   disable_threshold: float = 0.30,
                   prob_cutoff: float = 1e-12,
                   max_shots_each: int = 300,
-                  mode: str = "hp") -> dict:
+                  mode: str = "hp",
+                  till_death: bool = False) -> dict:
     """
     Probabilistic 1v1 duel with independent firing schedules across all
     weapons on both tanks.
 
-    mode = "hp"             : a tank loses when its HP drops below
-                              disable_threshold * base_health (original behavior).
-    mode = "weapon-disable" : a tank loses when EITHER its HP falls below
-                              threshold OR all of its weapons are disabled.
+    mode = "hp"             : a tank loses when its HP drops below the HP
+                              threshold (see below; original behavior).
+    mode = "weapon-disable" : a tank loses when EITHER its HP falls below the
+                              HP threshold OR all of its weapons are disabled.
                               On every penetrating hit, the DEFENDER's
                               highest-index live weapon rolls its own
                               `disable_chance`; on success that weapon is
                               disabled. Within one tick, sequential pens
                               cascade — once weapon[n-d-1] falls, the next
                               pen targets weapon[n-d-2].
+
+    HP threshold:
+      till_death=False (default) : HP < disable_threshold * base_health
+                                   (typically 30% — "knocked out, repairable").
+      till_death=True            : HP <= 0 (tank fully destroyed). Orthogonal
+                                   to `mode`; combinable with weapon-disable.
 
     fires1 = tuple of tank1-weapon indices firing this tick (empty = none)
     fires2 = tuple of tank2-weapon indices firing this tick
@@ -284,8 +291,15 @@ def simulate_duel(tank1: Tank, tank2: Tank,
     health_loss_on_t2 = [w.damage_health * velocity_mod * mult_on_t2[i]
                          for i, w in enumerate(tank1.weapons)]
 
-    disable_hp1 = tank1.base_health * disable_threshold
-    disable_hp2 = tank2.base_health * disable_threshold
+    if till_death:
+        # Disable when HP reaches or drops below 0. A tiny positive epsilon
+        # lets the existing strict-less-than comparison in dis1/dis2 catch
+        # HP == 0 without changing the comparison operator (which would
+        # alter behavior at the 30% boundary too).
+        disable_hp1 = disable_hp2 = 1e-9
+    else:
+        disable_hp1 = tank1.base_health * disable_threshold
+        disable_hp2 = tank2.base_health * disable_threshold
 
     def af1(hits1: Tuple[int, ...]) -> float:
         loss = sum(h * armor_loss_on_t1[i] for i, h in enumerate(hits1))
@@ -419,6 +433,7 @@ def simulate_duel(tank1: Tank, tank2: Tank,
             "initial_armor_frac1": initial_armor_frac1,
             "initial_armor_frac2": initial_armor_frac2,
             "mode": mode,
+            "till_death": till_death,
         }
 
     # -----------------------------------------------------------------------
@@ -609,6 +624,7 @@ def simulate_duel(tank1: Tank, tank2: Tank,
         "initial_armor_frac1": initial_armor_frac1,
         "initial_armor_frac2": initial_armor_frac2,
         "mode": mode,
+        "till_death": till_death,
     }
 
 
@@ -620,7 +636,10 @@ def print_duel_summary(tank1: Tank, tank2: Tank, result: dict) -> None:
     total = result["tank1_wins"] + result["tank2_wins"] + result["simultaneous"]
     sep = "=" * 58
     print(f"\n{sep}")
-    print(f"  DUEL: {tank1.name}  vs  {tank2.name}  @ {result['range_m']} m")
+    header = f"  DUEL: {tank1.name}  vs  {tank2.name}  @ {result['range_m']} m"
+    if result.get("till_death"):
+        header += "  (till death)"
+    print(header)
     print(sep)
     print(f"  {tank1.name:<22} wins : {result['tank1_wins']*100:6.2f} %")
     print(f"  {tank2.name:<22} wins : {result['tank2_wins']*100:6.2f} %")
@@ -934,6 +953,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--mode", choices=("hp", "weapon-disable"), default="hp",
                         help="win condition: 'hp' (default) or 'weapon-disable' "
                              "(losing all weapons also disables the tank)")
+    parser.add_argument("--till-death", action="store_true",
+                        help="HP loss triggers at 0 HP instead of 30%% of base "
+                             "HP. Combinable with --mode weapon-disable.")
     parser.add_argument("--tests", action="store_true",
                         help="run the sanity-check suite from tanks_test.json "
                              "instead of a single duel; positional args ignored")
@@ -971,6 +993,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         initial_armor_frac2=args.armor2,
         range_m=args.range_m,
         mode=args.mode,
+        till_death=args.till_death,
     )
     print_duel_summary(t1, t2, result)
     print_shot_log(t1, t2, result, n=args.shots)

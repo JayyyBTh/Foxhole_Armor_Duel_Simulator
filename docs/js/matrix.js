@@ -9,6 +9,7 @@
   const slider = document.getElementById("armor-slider");
   const readout = document.getElementById("armor-readout");
   const modeRadios = document.querySelectorAll('input[name="matrix-mode"]');
+  const thresholdRadios = document.querySelectorAll('input[name="threshold-mode"]');
 
   const main = {
     wc: document.getElementById("matrix-wc"),
@@ -31,18 +32,30 @@
     return "hp";
   }
 
+  function currentThreshold() {
+    for (const r of thresholdRadios) if (r.checked) return r.value;
+    return "30pct";
+  }
+
   function colorFor(p) {
     const hue = Math.round(120 * p);  // 0=red, 0.5=yellow, 1=green
     return `hsl(${hue}, 70%, 70%)`;
   }
 
-  function pick(matrices, mode, direction) {
-    // v3: { mode: { wc:[...], cw:[...] } }
-    // v2: { mode: [...] }              (assumed wc)
-    // v1: [...]                        (HP-only, assumed wc)
+  function pick(matrices, mode, direction, threshold) {
+    // v4: { mode: { dm: { wc:[...], cw:[...] } } }   dm in {"30pct","till_death"}
+    // v3: { mode: { wc:[...], cw:[...] } }           (assumed dm="30pct")
+    // v2: { mode: [...] }                            (assumed wc)
+    // v1: [...]                                      (HP-only, assumed wc)
     if (Array.isArray(matrices)) return direction === "wc" ? matrices : null;
     const inner = matrices[mode] || matrices.hp;
     if (Array.isArray(inner)) return direction === "wc" ? inner : null;
+    // v4 detection: the inner level has disable-mode keys
+    if (inner["30pct"] || inner["till_death"]) {
+      const byDm = inner[threshold] || inner["30pct"];
+      return byDm ? byDm[direction] : null;
+    }
+    // v3 fallback (legacy cache, no threshold dimension)
     return inner[direction];
   }
 
@@ -97,6 +110,7 @@
     if (!cache) return;
     const step = parseInt(slider.value, 10);
     const mode = currentMode();
+    const threshold = currentThreshold();
     const rowF = cache.row_faction || "row";
     const colF = cache.col_faction || "col";
     const rowKeys = cache.row_tanks || cache.tanks;
@@ -107,9 +121,9 @@
     group.wcTitle.innerHTML = `${capitalize(rowF)} &times; ${capitalize(colF)}`;
     group.cwTitle.innerHTML = `${capitalize(colF)} &times; ${capitalize(rowF)}`;
 
-    renderTable(group.wc, pick(cache.matrices, mode, "wc"), step,
+    renderTable(group.wc, pick(cache.matrices, mode, "wc", threshold), step,
                 rowKeys, rowNames, colKeys, colNames, rowF, colF);
-    renderTable(group.cw, pick(cache.matrices, mode, "cw"), step,
+    renderTable(group.cw, pick(cache.matrices, mode, "cw", threshold), step,
                 colKeys, colNames, rowKeys, rowNames, colF, rowF);
   }
 
@@ -163,9 +177,16 @@
       slider.disabled = false;
       slider.addEventListener("input", render);
       modeRadios.forEach(rd => rd.addEventListener("change", render));
+      thresholdRadios.forEach(rd => rd.addEventListener("change", render));
       if (Array.isArray(ref.matrices)) {
         const toggle = document.getElementById("matrix-mode");
         if (toggle) toggle.style.display = "none";
+      }
+      // Hide the threshold toggle on legacy caches that don't carry the
+      // disable-mode dimension (everything stays at the implicit 30% default).
+      if (!ref.disable_modes) {
+        const thrToggle = document.getElementById("threshold-toggle");
+        if (thrToggle) thrToggle.style.display = "none";
       }
       render();
     }

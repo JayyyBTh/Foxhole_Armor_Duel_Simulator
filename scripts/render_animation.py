@@ -47,13 +47,17 @@ def main() -> int:
         row_labels = col_labels = data.get("tank_names", data["tanks"])
         row_faction = col_faction = ""
 
-    # Animation tracks HP / Warden-rows ("wc"). Tolerate older cache shapes:
+    # Animation tracks HP / 30pct / Warden-rows ("wc"). Tolerate older shapes:
+    #   v4: { mode: { dm: { "wc": [...], "cw": [...] } } }
     #   v3: { mode: { "wc": [...], "cw": [...] } }
     #   v2: { mode: [...] }
     #   v1: [...] (HP-only flat list)
     raw = data["matrices"]
     if isinstance(raw, dict):
         raw = raw["hp"]
+    # v4: descend through the disable-mode dimension to the 30% threshold.
+    if isinstance(raw, dict) and ("30pct" in raw or "till_death" in raw):
+        raw = raw.get("30pct") or raw[next(iter(raw))]
     if isinstance(raw, dict):
         raw = raw["wc"]
     mats = [np.array(m) for m in raw]

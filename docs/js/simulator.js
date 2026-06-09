@@ -107,6 +107,7 @@ _TANK_NAMES = [_LIBRARY[k].name for k in _TANK_KEYS]
     const rng = parseFloat(document.getElementById("range_m").value);
     const shots = parseInt(document.getElementById("shots").value, 10);
     const mode = document.getElementById("mode").value;
+    const tillDeath = document.getElementById("till-death").value === "1";
 
     try {
       pyodide.globals.set("_t1k", t1);
@@ -116,6 +117,7 @@ _TANK_NAMES = [_LIBRARY[k].name for k in _TANK_KEYS]
       pyodide.globals.set("_rng", rng);
       pyodide.globals.set("_shots", shots);
       pyodide.globals.set("_mode", mode);
+      pyodide.globals.set("_till_death", tillDeath);
 
       const text = await pyodide.runPythonAsync(`
 import io, sys
@@ -124,7 +126,7 @@ _t2 = _LIBRARY[_t2k]
 _result = tank_duel.simulate_duel(
     tank1=_t1, tank2=_t2,
     initial_armor_frac1=_a1, initial_armor_frac2=_a2,
-    range_m=_rng, mode=_mode,
+    range_m=_rng, mode=_mode, till_death=_till_death,
 )
 _buf = io.StringIO()
 _saved = sys.stdout

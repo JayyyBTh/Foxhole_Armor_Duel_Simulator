@@ -11,8 +11,9 @@ Given two tanks, their starting armor fractions, and an engagement range, it pro
 - **Win probabilities** for each side (and the chance of a simultaneous kill).
 - **A shot-by-shot timeline** with the per-event pen probability (median and range across the active state distribution) and cumulative win curves.
 - **Two win conditions:**
-  - `hp` (default): a tank loses when HP drops below `disable_threshold * base_health` (30% by default).
+  - `hp` (default): a tank loses when HP drops below `disable_threshold * base_health` (30% by default — the in-game "knocked out, repairable" state).
   - `weapon-disable`: a tank also loses if all of its weapons are disabled, in addition to HP. Each penetrating hit rolls the defender's highest-index live weapon's `disable_chance`; within a tick the cascade can chain down to the next weapon.
+- **HP threshold toggle** via `--till-death` (CLI) / "Till death" radio (website): switches the HP loss condition from 30% to `HP ≤ 0` (tank fully destroyed). Combinable with `weapon-disable` — the tank loses when HP ≤ 0 **or** all weapons are disabled.
 
 The math is deterministic state-tree expansion — every state is `(hits1, hits2)` (plus disabled-weapon counts in `weapon-disable` mode), and at each shot event every live state branches by the per-state pen probability. Branches below `prob_cutoff = 1e-12` are pruned.
 

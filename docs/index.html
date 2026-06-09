@@ -49,6 +49,12 @@
               <option value="weapon-disable">weapon-disable</option>
             </select>
           </label>
+          <label>HP threshold
+            <select id="till-death">
+              <option value="0" selected>30% (knocked out)</option>
+              <option value="1">Till death (0 HP)</option>
+            </select>
+          </label>
           <label class="span">&nbsp;
             <button type="submit" id="run" disabled>Simulate</button>
           </label>
@@ -72,6 +78,10 @@
       <div id="matrix-mode" class="mode-toggle">
         <label><input type="radio" name="matrix-mode" value="hp" checked /> HP</label>
         <label><input type="radio" name="matrix-mode" value="weapon-disable" /> weapon-disable</label>
+      </div>
+      <div id="threshold-toggle" class="mode-toggle">
+        <label><input type="radio" name="threshold-mode" value="30pct" checked /> 30% HP (knocked out)</label>
+        <label><input type="radio" name="threshold-mode" value="till_death" /> Till death (0 HP)</label>
       </div>
       <div class="matrix-pair">
         <div class="matrix-block">

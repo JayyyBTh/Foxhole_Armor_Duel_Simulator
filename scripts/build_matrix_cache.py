@@ -31,11 +31,14 @@ PNG_DIR = ASSETS / "matrix_frames"
 RANGE_M = 30.0
 ARMOR_STEPS = [round(i * 0.05, 4) for i in range(21)]  # 0.00 .. 1.00
 MODES = ("hp", "weapon-disable")
+# Cache keys for the HP-threshold dimension. "30pct" = default knock-out;
+# "till_death" = HP must reach 0 before the tank is considered out.
+DISABLE_MODES = ("30pct", "till_death")
 ROW_FACTION = "warden"
 COL_FACTION = "colonial"
 
 
-def build_matrices(row_keys, col_keys, library, armor, mode):
+def build_matrices(row_keys, col_keys, library, armor, mode, till_death):
     """One sim per (row, col) pair — fills both matrices at once.
       forward[i][j]   = P(row_keys[i] beats col_keys[j])      (row attacker)
       reverse[j][i]   = P(col_keys[j] beats row_keys[i])      (col attacker)
@@ -47,7 +50,7 @@ def build_matrices(row_keys, col_keys, library, armor, mode):
             result = simulate_duel(
                 tank1=library[a_key], tank2=library[b_key],
                 initial_armor_frac1=armor, initial_armor_frac2=armor,
-                range_m=RANGE_M, mode=mode,
+                range_m=RANGE_M, mode=mode, till_death=till_death,
             )
             forward[i][j] = result["tank1_wins"]
             reverse[j][i] = result["tank2_wins"]
@@ -107,16 +110,27 @@ def build_cache_for_library(library_path: Path, out_json: Path,
     print(f"  {ROW_FACTION} rows ({len(row_keys)}): {row_keys}")
     print(f"  {COL_FACTION} cols ({len(col_keys)}): {col_keys}")
 
-    matrices: dict[str, dict[str, list]] = {m: {"wc": [], "cw": []} for m in MODES}
+    # matrices[mode][disable_mode][direction] = [step0, step1, ...] where
+    # each step is the 2D matrix. Doubling the disable-mode dimension is the
+    # only schema change vs the previous (v3) cache; the JS pick() fallback
+    # in matrix.js handles old caches.
+    matrices: dict = {
+        m: {dm: {"wc": [], "cw": []} for dm in DISABLE_MODES}
+        for m in MODES
+    }
     for step_idx, armor in enumerate(ARMOR_STEPS):
         print(f"    step {step_idx+1}/{len(ARMOR_STEPS)}  armor={armor:.2f}")
         for mode in MODES:
-            wc, cw = build_matrices(row_keys, col_keys, library, armor, mode)
-            matrices[mode]["wc"].append(wc)
-            matrices[mode]["cw"].append(cw)
-            if write_pngs and mode == "hp":
-                write_png(wc, row_keys, row_names, col_keys, col_names,
-                          armor, PNG_DIR / f"matrix_{step_idx:02d}.png")
+            for dm in DISABLE_MODES:
+                td = (dm == "till_death")
+                wc, cw = build_matrices(row_keys, col_keys, library, armor, mode, td)
+                matrices[mode][dm]["wc"].append(wc)
+                matrices[mode][dm]["cw"].append(cw)
+                # Slide-deck animation tracks the headline matrix:
+                # HP mode + 30% threshold, warden-rows direction.
+                if write_pngs and mode == "hp" and dm == "30pct":
+                    write_png(wc, row_keys, row_names, col_keys, col_names,
+                              armor, PNG_DIR / f"matrix_{step_idx:02d}.png")
 
     payload = {
         "range_m": RANGE_M,
@@ -128,6 +142,7 @@ def build_cache_for_library(library_path: Path, out_json: Path,
         "col_names": col_names,
         "armor_steps": ARMOR_STEPS,
         "modes": list(MODES),
+        "disable_modes": list(DISABLE_MODES),
         "matrices": matrices,
     }
     out_json.write_text(json.dumps(payload), encoding="utf-8")
