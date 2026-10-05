@@ -19,6 +19,25 @@
         "damage_type": "explosive"
       }
     },
+    "ScoutTankOffensiveW": {
+      "name": "King Gallant (30mm ST)",
+      "armor_class": "heavy",
+      "base_health": 1350,
+      "base_armor": 8500,
+      "base_pen_chance": 0.5,
+      "pre_bonus_cap": 0.90,
+      "weapon": {
+        "name": "Gallant 30mm",
+        "damage_health": 400,
+        "damage_armor": 400,
+        "pen_mod": 1.0,
+        "reload_time": 5,
+        "fire_cooldown": 2.0,
+        "ammo_capacity": 1,
+        "disable_chance": 0.2,
+        "damage_type": "explosive"
+      }
+    },
     "HalfTrackOffensiveW": {
       "name": "Blinder (ATHT)",
       "armor_class": "light",
@@ -96,6 +115,25 @@
         "disable_chance": 0.0,
         "damage_type": "at_kinetic",
         "reload_mode": "per_magazine"
+      }
+    },
+    "TanketteOffensiveC": {
+      "name": "Ixion (30mm Tankette)",
+      "armor_class": "heavy",
+      "base_health": 1350,
+      "base_armor": 7200,
+      "base_pen_chance": 0.55,
+      "pre_bonus_cap": 0.80,
+      "weapon": {
+        "name": "Ixion 30mm",
+        "damage_health": 400,
+        "damage_armor": 400,
+        "pen_mod": 1.0,
+        "reload_time": 4.5,
+        "fire_cooldown": 2,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "explosive",
       }
     },
     "LightTankOffensiveC": {
