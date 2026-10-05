@@ -133,7 +133,7 @@
         "fire_cooldown": 2,
         "ammo_capacity": 1,
         "disable_chance": 0.0,
-        "damage_type": "explosive",
+        "damage_type": "explosive"
       }
     },
     "LightTankOffensiveC": {
