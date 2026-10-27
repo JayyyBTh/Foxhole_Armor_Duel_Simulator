@@ -73,11 +73,12 @@ Tanks live in JSON, faction-bucketed, keyed by codename:
 }
 ```
 
-Two library files:
+Three library files:
 - [`tanks.json`](tanks.json) — main mid/late-war library (15 tanks).
-- [`earlywar.json`](earlywar.json) — early-war light vehicles (3 so far). Same shape, optional.
+- [`earlywar.json`](earlywar.json) — early-war light vehicles. Same shape, optional.
+- [`pushgun.json`](pushgun.json) — push guns. Same shape, optional. Push guns have no tank armour: model them with `base_pen_chance: 1.0`, `pre_bonus_cap: 1.0` (auto-pen) and `armor_class: "heavy"`; keep `base_armor` > 0 (it's a divisor).
 
-The CLI auto-loads both if both exist. Override with `--tanks-file path1 [path2 ...]`.
+The CLI auto-loads every library file that exists. Override with `--tanks-file path1 [path2 ...]`.
 
 ### Damage types
 
@@ -110,8 +111,8 @@ The whole simulator is one file: [`tank_duel.py`](tank_duel.py). Key invariants 
 Lives in [`docs/`](docs/) and is deployed by GitHub Pages. The static-site pipeline:
 
 ```powershell
-python scripts/sync_assets.py            # copies tank_duel.py + tanks.json + earlywar.json into docs/assets/
-python scripts/build_matrix_cache.py     # rebuilds matrix_cache.json + matrix_cache_earlywar.json + slide PNGs
+python scripts/sync_assets.py            # copies tank_duel.py + tanks.json + earlywar.json + pushgun.json into docs/assets/
+python scripts/build_matrix_cache.py     # rebuilds matrix_cache.json + _earlywar + _pushgun caches + slide PNGs
 python scripts/render_animation.py       # rebuilds matrix_evolution.mp4 + GIF (main library only)
 git add docs/ && git commit -m "rebuild" && git push
 ```
@@ -146,6 +147,7 @@ Scenarios use toy tanks (5 HP, 1-damage weapons, etc.) in [`tanks_test.json`](ta
 tank_duel.py              single-file simulator (stdlib only)
 tanks.json                main tank library
 earlywar.json             early-war light vehicles (optional)
+pushgun.json              push guns (optional)
 tanks_test.json           toy tanks for --tests
 _audit_vs_game.py         throwaway diff vs the game data
 scripts/

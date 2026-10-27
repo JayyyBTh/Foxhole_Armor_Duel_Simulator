@@ -719,14 +719,17 @@ def print_shot_log(tank1: Tank, tank2: Tank, result: dict, n: int = 15) -> None:
 
 DEFAULT_TANKS_FILE = Path(__file__).with_name("tanks.json")
 DEFAULT_EARLYWAR_FILE = Path(__file__).with_name("earlywar.json")
+DEFAULT_PUSHGUN_FILE = Path(__file__).with_name("pushgun.json")
 
 
 def default_library_files() -> List[Path]:
-    """Default library file list: tanks.json plus earlywar.json if it exists.
-    Used by the CLI and any other entry point that wants the "everything" view."""
+    """Default library file list: tanks.json plus earlywar.json and
+    pushgun.json if they exist. Used by the CLI and any other entry point
+    that wants the "everything" view."""
     files = [DEFAULT_TANKS_FILE]
-    if DEFAULT_EARLYWAR_FILE.exists():
-        files.append(DEFAULT_EARLYWAR_FILE)
+    for p in (DEFAULT_EARLYWAR_FILE, DEFAULT_PUSHGUN_FILE):
+        if p.exists():
+            files.append(p)
     return files
 
 
@@ -949,7 +952,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--tanks-file", type=Path, nargs="+", default=None,
                         help=f"one or more tank library JSON files (default: "
                              f"{DEFAULT_TANKS_FILE.name} plus "
-                             f"{DEFAULT_EARLYWAR_FILE.name} if it exists)")
+                             f"{DEFAULT_EARLYWAR_FILE.name} and "
+                             f"{DEFAULT_PUSHGUN_FILE.name} if they exist)")
     parser.add_argument("--mode", choices=("hp", "weapon-disable"), default="hp",
                         help="win condition: 'hp' (default) or 'weapon-disable' "
                              "(losing all weapons also disables the tank)")

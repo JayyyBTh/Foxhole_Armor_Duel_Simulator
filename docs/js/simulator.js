@@ -48,22 +48,22 @@
       pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
 
       setStatus("Loading tank_duel.py…", "");
-      // earlywar.json is optional — if the fetch fails (e.g. the asset
-      // wasn't synced), the picker still works with the main library only.
-      let earlywarSrc = null;
-      try {
-        earlywarSrc = await fetchText("assets/earlywar.json");
-      } catch (e) {
-        console.warn("earlywar.json not loaded:", e.message);
-      }
+      // Optional libraries — if a fetch fails (e.g. the asset wasn't
+      // synced), the picker still works with whatever did load. Order here
+      // is the load order passed to load_libraries below.
+      const OPTIONAL_LIBS = ["earlywar.json", "pushgun.json"];
       const [pySrc, tanksSrc] = await Promise.all([
         fetchText("assets/tank_duel.py"),
         fetchText("assets/tanks.json"),
       ]);
       pyodide.FS.writeFile("tank_duel.py", pySrc);
       pyodide.FS.writeFile("tanks.json", tanksSrc);
-      if (earlywarSrc !== null) {
-        pyodide.FS.writeFile("earlywar.json", earlywarSrc);
+      for (const name of OPTIONAL_LIBS) {
+        try {
+          pyodide.FS.writeFile(name, await fetchText("assets/" + name));
+        } catch (e) {
+          console.warn(name + " not loaded:", e.message);
+        }
       }
 
       await pyodide.runPythonAsync(`
@@ -73,8 +73,9 @@ sys.path.insert(0, '.')
 import tank_duel
 importlib.reload(tank_duel)
 _paths = [Path("tanks.json")]
-if Path("earlywar.json").exists():
-    _paths.append(Path("earlywar.json"))
+for _name in ("earlywar.json", "pushgun.json"):
+    if Path(_name).exists():
+        _paths.append(Path(_name))
 _LIBRARY = tank_duel.load_libraries(_paths)
 _TANK_KEYS = sorted(_LIBRARY.keys())
 _TANK_NAMES = [_LIBRARY[k].name for k in _TANK_KEYS]

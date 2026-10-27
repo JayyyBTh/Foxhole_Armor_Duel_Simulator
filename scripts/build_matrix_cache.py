@@ -7,8 +7,8 @@ consumed by the slider widget, plus (for the main library only) one
 PNG per step for the slide deck (HP mode only).
 
 Run once per library: main tanks.json -> matrix_cache.json (+ PNGs for
-the animation), earlywar.json -> matrix_cache_earlywar.json (cache
-only, no PNGs).
+the animation), earlywar.json -> matrix_cache_earlywar.json and
+pushgun.json -> matrix_cache_pushgun.json (cache only, no PNGs).
 """
 from __future__ import annotations
 import json
@@ -20,12 +20,13 @@ sys.path.insert(0, str(ROOT))
 
 from tank_duel import (  # noqa: E402
     load_tanks, load_factions, simulate_duel,
-    DEFAULT_TANKS_FILE, DEFAULT_EARLYWAR_FILE,
+    DEFAULT_TANKS_FILE, DEFAULT_EARLYWAR_FILE, DEFAULT_PUSHGUN_FILE,
 )
 
 ASSETS = ROOT / "docs" / "assets"
 MAIN_OUT_JSON = ASSETS / "matrix_cache.json"
 EW_OUT_JSON = ASSETS / "matrix_cache_earlywar.json"
+PG_OUT_JSON = ASSETS / "matrix_cache_pushgun.json"
 PNG_DIR = ASSETS / "matrix_frames"
 
 RANGE_M = 30.0
@@ -159,17 +160,19 @@ def main() -> int:
         DEFAULT_TANKS_FILE, MAIN_OUT_JSON, write_pngs=True, label="main",
     )
 
-    # Early-war library — cache only, no animation. Tolerant of an empty
+    # Optional libraries — cache only, no animation. Tolerant of an empty
     # or single-faction file.
-    if DEFAULT_EARLYWAR_FILE.exists():
-        build_cache_for_library(
-            DEFAULT_EARLYWAR_FILE, EW_OUT_JSON, write_pngs=False, label="earlywar",
-        )
-    else:
-        print(f"--- earlywar: {DEFAULT_EARLYWAR_FILE.name} not present, skipping ---")
-        if EW_OUT_JSON.exists():
-            EW_OUT_JSON.unlink()
-            print(f"  removed stale {EW_OUT_JSON}")
+    for lib, out_json, label in (
+        (DEFAULT_EARLYWAR_FILE, EW_OUT_JSON, "earlywar"),
+        (DEFAULT_PUSHGUN_FILE, PG_OUT_JSON, "pushgun"),
+    ):
+        if lib.exists():
+            build_cache_for_library(lib, out_json, write_pngs=False, label=label)
+        else:
+            print(f"--- {label}: {lib.name} not present, skipping ---")
+            if out_json.exists():
+                out_json.unlink()
+                print(f"  removed stale {out_json}")
 
     # The main cache is the headline artifact; its absence is fatal.
     return rc_main

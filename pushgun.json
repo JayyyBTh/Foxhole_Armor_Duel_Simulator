@@ -1,0 +1,140 @@
+{
+  "warden": {
+    "FieldATW": {
+      "name": "Collins 68 (FATW)",
+      "armor_class": "heavy",
+      "base_health": 2850,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "FAT 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "ap"
+      }
+    },
+    "FieldATDamageW": {
+      "name": "Rampart (HV68)",
+      "armor_class": "heavy",
+      "base_health": 4000,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "HVFAT 68mm",
+        "damage_health": 750,
+        "damage_armor": 750,
+        "pen_mod": 1.5,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "ap"
+      }
+    },
+    "FieldCannonW": {
+      "name": "Wolfhound (FCW)",
+      "armor_class": "heavy",
+      "base_health": 2850,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "FC 40mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "explosive"
+      }
+    },
+    "LargeFieldCannonW": {
+      "name": "Stockade (LFCW)",
+      "armor_class": "heavy",
+      "base_health": 5000,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "Stockade HV75mm",
+        "damage_health": 2362,
+        "damage_armor": 2362,
+        "pen_mod": 1.5,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "explosive"
+      }
+    }
+  },
+  "colonial": {
+    "FieldATC": {
+      "name": "Battering Ram 68 (FATC)",
+      "armor_class": "heavy",
+      "base_health": 2850,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "FAT 68mm",
+        "damage_health": 600,
+        "damage_armor": 600,
+        "pen_mod": 1.5,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "ap"
+      }
+    },
+    "FieldCannonDamageC": {
+      "name": "Smelter (HV40)",
+      "armor_class": "heavy",
+      "base_health": 4000,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "HVFC 40mm",
+        "damage_health": 810,
+        "damage_armor": 810,
+        "pen_mod": 1,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "damage_type": "explosive"
+      }
+    },
+    "LargeFieldATC": {
+      "name": "Stygian (LFATC)",
+      "armor_class": "heavy",
+      "base_health": 5000,
+      "base_armor": 1,
+      "base_pen_chance": 1,
+      "pre_bonus_cap": 1,
+      "weapon": {
+        "name": "Stygian HV94.5mm",
+        "damage_health": 2625,
+        "damage_armor": 2625,
+        "pen_mod": 2,
+        "reload_time": 3,
+        "fire_cooldown": 1,
+        "ammo_capacity": 1,
+        "disable_chance": 0.0,
+        "disable_mod": 1.5,
+        "damage_type": "ap"
+      }
+    }
+  }
+}

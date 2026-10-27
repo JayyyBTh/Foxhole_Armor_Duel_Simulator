@@ -1,8 +1,9 @@
-// Loads matrix_cache.json (main) and matrix_cache_earlywar.json (early-war)
-// and renders up to four heatmap tables that share the armor slider and
-// mode toggle:
+// Loads matrix_cache.json (main), matrix_cache_earlywar.json (early-war) and
+// matrix_cache_pushgun.json (push guns) and renders up to six heatmap tables
+// that share the armor slider and mode toggle:
 //   Main:      Warden×Colonial  +  Colonial×Warden   (data.matrices[mode].wc / .cw)
 //   Early-war: same pair, scoped to earlywar.json
+//   Push guns: same pair, scoped to pushgun.json
 // No live simulation here — the caches are precomputed.
 
 (function () {
@@ -18,14 +19,23 @@
     cwTitle: document.getElementById("matrix-cw-title"),
     cache: null,
   };
-  const ew = {
-    wc: document.getElementById("matrix-ew-wc"),
-    cw: document.getElementById("matrix-ew-cw"),
-    wcTitle: document.getElementById("matrix-ew-wc-title"),
-    cwTitle: document.getElementById("matrix-ew-cw-title"),
-    pair: document.getElementById("matrix-ew-pair"),
-    cache: null,
-  };
+  // Optional per-library sections. Each one is hidden when its cache is
+  // missing (library absent, empty, or single-faction).
+  function optionalGroup(prefix, cachePath) {
+    return {
+      wc: document.getElementById(`matrix-${prefix}-wc`),
+      cw: document.getElementById(`matrix-${prefix}-cw`),
+      wcTitle: document.getElementById(`matrix-${prefix}-wc-title`),
+      cwTitle: document.getElementById(`matrix-${prefix}-cw-title`),
+      section: document.getElementById(`matrix-${prefix}-section`),
+      cachePath,
+      cache: null,
+    };
+  }
+  const optional = [
+    optionalGroup("ew", "assets/matrix_cache_earlywar.json"),
+    optionalGroup("pg", "assets/matrix_cache_pushgun.json"),
+  ];
 
   function currentMode() {
     for (const r of modeRadios) if (r.checked) return r.value;
@@ -128,12 +138,18 @@
   }
 
   function render() {
-    const stepSrc = main.cache || ew.cache;
+    const stepSrc = refCache();
     if (!stepSrc) return;
     const step = parseInt(slider.value, 10);
     readout.textContent = `armor = ${stepSrc.armor_steps[step].toFixed(2)}`;
     if (main.cache) renderOne(main);
-    if (ew.cache) renderOne(ew);
+    for (const g of optional) if (g.cache) renderOne(g);
+  }
+
+  function refCache() {
+    if (main.cache) return main.cache;
+    const g = optional.find(g => g.cache);
+    return g ? g.cache : null;
   }
 
   function capitalize(s) {
@@ -147,8 +163,8 @@
   }
 
   async function boot() {
-    // Main cache is required. Early-war cache is optional — missing or empty
-    // earlywar library => hide the early-war section gracefully.
+    // Main cache is required. Early-war / push-gun caches are optional —
+    // missing or empty library => hide that section gracefully.
     try {
       main.cache = await fetchCache("assets/matrix_cache.json");
       if (!main.cache) throw new Error("matrix_cache.json missing");
@@ -158,19 +174,16 @@
       main.cw.innerHTML = "";
     }
 
-    try {
-      ew.cache = await fetchCache("assets/matrix_cache_earlywar.json");
-    } catch (e) {
-      console.error(e);
-    }
-    if (!ew.cache && ew.pair) {
-      ew.pair.style.display = "none";
-      // Also hide the divider heading — the section is empty.
-      const divider = document.querySelector(".era-divider");
-      if (divider) divider.style.display = "none";
+    for (const g of optional) {
+      try {
+        g.cache = await fetchCache(g.cachePath);
+      } catch (e) {
+        console.error(e);
+      }
+      if (!g.cache && g.section) g.section.style.display = "none";
     }
 
-    const ref = main.cache || ew.cache;
+    const ref = refCache();
     if (ref) {
       slider.max = ref.armor_steps.length - 1;
       slider.value = ref.armor_steps.length - 1;
