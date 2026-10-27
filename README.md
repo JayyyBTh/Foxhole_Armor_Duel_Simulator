@@ -76,7 +76,7 @@ Tanks live in JSON, faction-bucketed, keyed by codename:
 Three library files:
 - [`tanks.json`](tanks.json) — main mid/late-war library (15 tanks).
 - [`earlywar.json`](earlywar.json) — early-war light vehicles. Same shape, optional.
-- [`pushgun.json`](pushgun.json) — push guns. Same shape, optional. Push guns have no tank armour: model them with `base_pen_chance: 1.0`, `pre_bonus_cap: 1.0` (auto-pen) and `armor_class: "heavy"`; keep `base_armor` > 0 (it's a divisor).
+- [`pushgun.json`](pushgun.json) — push guns. Same shape, optional. Push guns have no tank armour: model them with `base_pen_chance: 1.0`, `pre_bonus_cap: 1.0` (auto-pen) and `armor_class: "heavy"`; keep `base_armor` > 0 (it's a divisor). On the website, push guns get their own matrix against the opposing faction's `tanks.json` tanks, not against each other.
 
 The CLI auto-loads every library file that exists. Override with `--tanks-file path1 [path2 ...]`.
 
@@ -112,7 +112,7 @@ Lives in [`docs/`](docs/) and is deployed by GitHub Pages. The static-site pipel
 
 ```powershell
 python scripts/sync_assets.py            # copies tank_duel.py + tanks.json + earlywar.json + pushgun.json into docs/assets/
-python scripts/build_matrix_cache.py     # rebuilds matrix_cache.json + _earlywar + _pushgun caches + slide PNGs
+python scripts/build_matrix_cache.py     # rebuilds matrix_cache.json + _earlywar + _pushgun caches + slide PNGs (--only pushgun for one)
 python scripts/render_animation.py       # rebuilds matrix_evolution.mp4 + GIF (main library only)
 git add docs/ && git commit -m "rebuild" && git push
 ```

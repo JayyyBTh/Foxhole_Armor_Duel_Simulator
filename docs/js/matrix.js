@@ -3,7 +3,8 @@
 // that share the armor slider and mode toggle:
 //   Main:      Warden×Colonial  +  Colonial×Warden   (data.matrices[mode].wc / .cw)
 //   Early-war: same pair, scoped to earlywar.json
-//   Push guns: same pair, scoped to pushgun.json
+//   Push guns: Warden push guns × Colonial tanks  +  Colonial push guns ×
+//              Warden tanks (cross-library cache with a `tables` block)
 // No live simulation here — the caches are precomputed.
 
 (function () {
@@ -121,6 +122,23 @@
     const step = parseInt(slider.value, 10);
     const mode = currentMode();
     const threshold = currentThreshold();
+
+    // Cross-library caches (push guns vs tanks) describe each table
+    // separately: tables[dir] = { rows, row_names, cols, col_names,
+    // row_label, col_label }. Both tables are row-beats-column.
+    if (cache.tables) {
+      for (const dir of ["wc", "cw"]) {
+        const t = cache.tables[dir];
+        const title = dir === "wc" ? group.wcTitle : group.cwTitle;
+        title.innerHTML = `${capitalize(t.row_label)} &times; ${capitalize(t.col_label)}`;
+        renderTable(dir === "wc" ? group.wc : group.cw,
+                    pick(cache.matrices, mode, dir, threshold), step,
+                    t.rows, t.row_names, t.cols, t.col_names,
+                    capitalize(t.row_label), capitalize(t.col_label));
+      }
+      return;
+    }
+
     const rowF = cache.row_faction || "row";
     const colF = cache.col_faction || "col";
     const rowKeys = cache.row_tanks || cache.tanks;

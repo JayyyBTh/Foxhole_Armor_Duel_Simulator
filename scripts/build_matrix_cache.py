@@ -7,8 +7,12 @@ consumed by the slider widget, plus (for the main library only) one
 PNG per step for the slide deck (HP mode only).
 
 Run once per library: main tanks.json -> matrix_cache.json (+ PNGs for
-the animation), earlywar.json -> matrix_cache_earlywar.json and
-pushgun.json -> matrix_cache_pushgun.json (cache only, no PNGs).
+the animation), earlywar.json -> matrix_cache_earlywar.json (cache
+only, no PNGs). pushgun.json is matched against the opposing faction's
+tanks.json tanks instead -> matrix_cache_pushgun.json (see
+build_pushgun_cache).
+
+    python scripts/build_matrix_cache.py [--only main|earlywar|pushgun]
 """
 from __future__ import annotations
 import json
@@ -151,28 +155,107 @@ def build_cache_for_library(library_path: Path, out_json: Path,
     return 0
 
 
+def build_pushgun_cache(pushgun_path: Path, tanks_path: Path, out_json: Path) -> int:
+    """Push guns vs the OPPOSING faction's main-library tanks.
+
+    Unlike the per-library caches, the two tables have different row/column
+    sets, so the payload carries a `tables` block describing each one:
+      wc[i][j] = P(warden push gun i beats colonial tank j)
+      cw[i][j] = P(colonial push gun i beats warden tank j)
+    Push guns auto-pen, so the shared armor step only matters for the tank.
+    Returns 0 on success, 1 if a table would be empty (cache write skipped).
+    """
+    print(f"--- pushgun: {pushgun_path.name} x {tanks_path.name} -> {out_json.name} ---")
+    guns = load_tanks(pushgun_path)
+    gun_f = load_factions(pushgun_path)
+    tanks = load_tanks(tanks_path)
+    tank_f = load_factions(tanks_path)
+    library = {**tanks, **guns}
+
+    def keys(factions, faction):
+        return sorted(k for k, f in factions.items() if f == faction)
+
+    tables = {
+        "wc": {"rows": keys(gun_f, ROW_FACTION), "cols": keys(tank_f, COL_FACTION),
+               "row_label": f"{ROW_FACTION} push guns", "col_label": f"{COL_FACTION} tanks"},
+        "cw": {"rows": keys(gun_f, COL_FACTION), "cols": keys(tank_f, ROW_FACTION),
+               "row_label": f"{COL_FACTION} push guns", "col_label": f"{ROW_FACTION} tanks"},
+    }
+    if not all(t["rows"] and t["cols"] for t in tables.values()):
+        print(f"  skipping {out_json.name}: need push guns and tanks for both factions")
+        if out_json.exists():
+            out_json.unlink()
+            print(f"  removed stale {out_json}")
+        return 1
+    for d, t in tables.items():
+        t["row_names"] = [library[k].name for k in t["rows"]]
+        t["col_names"] = [library[k].name for k in t["cols"]]
+        print(f"  {d}: {t['row_label']} {t['rows']} x {t['col_label']} {t['cols']}")
+
+    matrices: dict = {
+        m: {dm: {"wc": [], "cw": []} for dm in DISABLE_MODES}
+        for m in MODES
+    }
+    for step_idx, armor in enumerate(ARMOR_STEPS):
+        print(f"    step {step_idx+1}/{len(ARMOR_STEPS)}  armor={armor:.2f}")
+        for mode in MODES:
+            for dm in DISABLE_MODES:
+                td = (dm == "till_death")
+                for d, t in tables.items():
+                    fwd, _rev = build_matrices(t["rows"], t["cols"], library,
+                                               armor, mode, td)
+                    matrices[mode][dm][d].append(fwd)
+
+    payload = {
+        "range_m": RANGE_M,
+        "tables": tables,
+        "armor_steps": ARMOR_STEPS,
+        "modes": list(MODES),
+        "disable_modes": list(DISABLE_MODES),
+        "matrices": matrices,
+    }
+    out_json.write_text(json.dumps(payload), encoding="utf-8")
+    print(f"  wrote {out_json} ({out_json.stat().st_size} bytes)")
+    return 0
+
+
 def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description="Rebuild the matrix caches.")
+    parser.add_argument("--only", choices=("main", "earlywar", "pushgun"),
+                        help="rebuild just one cache (default: all)")
+    args = parser.parse_args()
+
     ASSETS.mkdir(parents=True, exist_ok=True)
     PNG_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Main library — PNGs feed the slide-deck animation.
-    rc_main = build_cache_for_library(
-        DEFAULT_TANKS_FILE, MAIN_OUT_JSON, write_pngs=True, label="main",
-    )
+    rc_main = 0
+    if args.only in (None, "main"):
+        # Main library — PNGs feed the slide-deck animation.
+        rc_main = build_cache_for_library(
+            DEFAULT_TANKS_FILE, MAIN_OUT_JSON, write_pngs=True, label="main",
+        )
 
     # Optional libraries — cache only, no animation. Tolerant of an empty
     # or single-faction file.
-    for lib, out_json, label in (
-        (DEFAULT_EARLYWAR_FILE, EW_OUT_JSON, "earlywar"),
-        (DEFAULT_PUSHGUN_FILE, PG_OUT_JSON, "pushgun"),
-    ):
-        if lib.exists():
-            build_cache_for_library(lib, out_json, write_pngs=False, label=label)
+    if args.only in (None, "earlywar"):
+        if DEFAULT_EARLYWAR_FILE.exists():
+            build_cache_for_library(DEFAULT_EARLYWAR_FILE, EW_OUT_JSON,
+                                    write_pngs=False, label="earlywar")
         else:
-            print(f"--- {label}: {lib.name} not present, skipping ---")
-            if out_json.exists():
-                out_json.unlink()
-                print(f"  removed stale {out_json}")
+            print(f"--- earlywar: {DEFAULT_EARLYWAR_FILE.name} not present, skipping ---")
+            if EW_OUT_JSON.exists():
+                EW_OUT_JSON.unlink()
+                print(f"  removed stale {EW_OUT_JSON}")
+
+    if args.only in (None, "pushgun"):
+        if DEFAULT_PUSHGUN_FILE.exists():
+            build_pushgun_cache(DEFAULT_PUSHGUN_FILE, DEFAULT_TANKS_FILE, PG_OUT_JSON)
+        else:
+            print(f"--- pushgun: {DEFAULT_PUSHGUN_FILE.name} not present, skipping ---")
+            if PG_OUT_JSON.exists():
+                PG_OUT_JSON.unlink()
+                print(f"  removed stale {PG_OUT_JSON}")
 
     # The main cache is the headline artifact; its absence is fatal.
     return rc_main
